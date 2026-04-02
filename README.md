@@ -30,6 +30,18 @@ This creates a virtual environment, installs all dependencies, and downloads the
 source .venv/bin/activate
 ```
 
+Test the dashboard with:
+
+```bash
+python HRI_lab_Pepper/dashboard.py --url tcp://ROBOT_IP:9559
+```
+
+Then open **http://localhost:8080** in your browser and you should see something like:
+
+<img width="3675" height="1910" alt="Screenshot from 2026-04-02 18-07-52" src="https://github.com/user-attachments/assets/9e7db66f-702d-44cf-aac8-eca02b9dd6de" />
+
+For more information on the dashboard, see [./docs/dashboard.md](./docs/dashboard.md).
+
 ---
 
 ## 2. Connecting to the Robot
