@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<!--
+  Pepper Tablet — Question / Riddle page
+  =========================================
+  Display a question or riddle for the user. Optionally show a countdown timer
+  and a hint.
+
+  URL parameters:
+    ?question=What+is+2+%2B+2%3F   The question text (required)
+    ?hint=Think+about+addition       Optional hint shown below question
+    ?image=http://...                Optional image URL
+    ?timer=30                        Countdown in seconds (omit to disable)
+    ?color=#58a6ff                   Accent colour override
+
+  Example:
+    http://LAPTOP:8080/tablet/question.html?question=What+colour+is+the+sky?&timer=20
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Question</title>
+  <link rel="stylesheet" href="base.css">
+  <style>
+    .question-icon { font-size: clamp(2.5rem, 7vw, 5rem); }
+
+    .question-text {
+      font-size: clamp(1.8rem, 4.5vw, 3.5rem);
+      font-weight: 700;
+      max-width: 90vw;
+      line-height: 1.25;
+    }
+
+    .hint-text {
+      font-size: var(--body-size);
+      color: var(--warning);
+      font-style: italic;
+      max-width: 80vw;
+    }
+
+    #timer-label {
+      font-size: var(--body-size);
+      color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+      font-family: monospace;
+    }
+
+    #timer-bar-fill {
+      background: var(--accent);
+      transition: width 1s linear;
+    }
+    #timer-bar-fill.urgent { background: var(--danger); }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="question-icon">❓</div>
+
+    <p class="question-text" id="question-el">Question goes here</p>
+
+    <img id="image-el" class="media-img" style="display:none" alt="">
+
+    <p class="hint-text" id="hint-el" style="display:none"></p>
+
+    <!-- Timer (shown if ?timer=N is set) -->
+    <div id="timer-wrap" style="display:none; width:100%; max-width:700px;">
+      <div style="display:flex; justify-content:space-between; margin-bottom:.4rem;">
+        <span class="small-text">Time remaining</span>
+        <span id="timer-label">--</span>
+      </div>
+      <div class="timer-bar">
+        <div class="timer-bar-fill" id="timer-bar-fill" style="width:100%"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const p = new URLSearchParams(location.search);
+
+    const question = p.get('question') || 'Question goes here';
+    const hint     = p.get('hint')     || '';
+    const image    = p.get('image')    || '';
+    const timer    = parseInt(p.get('timer') || '0', 10);
+    const color    = p.get('color')    || '';
+
+    document.getElementById('question-el').textContent = question;
+
+    if (hint)  {
+      const el = document.getElementById('hint-el');
+      el.textContent = '💡 ' + hint;
+      el.style.display = '';
+    }
+
+    if (image) {
+      const el = document.getElementById('image-el');
+      el.src = image;
+      el.style.display = '';
+    }
+
+    if (color) {
+      document.documentElement.style.setProperty('--accent', color);
+    }
+
+    // ── Countdown timer ──────────────────────────────────────────────────
+    if (timer > 0) {
+      const wrap  = document.getElementById('timer-wrap');
+      const label = document.getElementById('timer-label');
+      const fill  = document.getElementById('timer-bar-fill');
+      wrap.style.display = '';
+
+      let remaining = timer;
+
+      function tick() {
+        label.textContent = remaining + 's';
+        fill.style.width  = (remaining / timer * 100).toFixed(1) + '%';
+        if (remaining <= 5) fill.classList.add('urgent');
+        if (remaining <= 0) return;
+        remaining--;
+        setTimeout(tick, 1000);
+      }
+
+      // Small delay so the CSS transition kicks in smoothly
+      setTimeout(tick, 100);
+    }
+  </script>
+</body>
+</html>

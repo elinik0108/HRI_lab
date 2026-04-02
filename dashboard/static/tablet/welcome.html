@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<!--
+  Pepper Tablet — Welcome / Greeting page
+  ========================================
+  URL parameters (all optional):
+    ?title=Hello!           Main greeting text
+    ?subtitle=I am Pepper   Secondary line
+    ?message=How can I help you today?   Body message
+    ?image=http://...       URL of image to show
+    ?color=#58a6ff          Accent colour override
+
+  Example:
+    http://LAPTOP:8080/tablet/welcome.html?title=Welcome!&subtitle=I+am+Pepper
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Welcome</title>
+  <link rel="stylesheet" href="base.css">
+  <style>
+    /* ── Page-specific overrides ──────────────────────────────────────── */
+    .robot-icon {
+      font-size: clamp(4rem, 12vw, 8rem);
+      line-height: 1;
+    }
+
+    .title { color: var(--accent); }
+
+    /* ── Entrance animations ──────────────────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .anim { opacity: 0; animation: fadeUp .6s ease forwards; }
+    .anim-1 { animation-delay: .1s; }
+    .anim-2 { animation-delay: .3s; }
+    .anim-3 { animation-delay: .5s; }
+    .anim-4 { animation-delay: .7s; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="robot-icon anim anim-1" id="robot-icon">🤖</div>
+    <h1 class="title anim anim-2" id="title-el">Hello!</h1>
+    <p  class="subtitle anim anim-3" id="subtitle-el">I am Pepper</p>
+    <p  class="body-text anim anim-4" id="message-el" style="display:none"></p>
+    <img id="image-el" class="media-img anim anim-4" style="display:none" alt="">
+  </div>
+
+  <script>
+    // ── Read URL parameters ──────────────────────────────────────────────
+    const p = new URLSearchParams(location.search);
+
+    const title    = p.get('title')    || 'Hello!';
+    const subtitle = p.get('subtitle') || 'I am Pepper';
+    const message  = p.get('message')  || '';
+    const image    = p.get('image')    || '';
+    const color    = p.get('color')    || '';
+
+    // ── Apply content ────────────────────────────────────────────────────
+    document.getElementById('title-el').textContent    = title;
+    document.getElementById('subtitle-el').textContent = subtitle;
+
+    if (message) {
+      const el = document.getElementById('message-el');
+      el.textContent = message;
+      el.style.display = '';
+    }
+
+    if (image) {
+      const el = document.getElementById('image-el');
+      el.src = image;
+      el.style.display = '';
+    }
+
+    if (color) {
+      document.documentElement.style.setProperty('--accent', color);
+    }
+  </script>
+</body>
+</html>

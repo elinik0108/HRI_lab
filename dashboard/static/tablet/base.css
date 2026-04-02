@@ -1,0 +1,216 @@
+/*
+ * pepper_api_students — Shared tablet styles
+ * Include in every tablet page: <link rel="stylesheet" href="../base.css">
+ *
+ * ── CSS variables (easy theming) ─────────────────────────────────────────
+ *
+ * Override these in a <style> block at the top of your page:
+ *
+ *   :root {
+ *     --accent: #f59e0b;   /* change accent colour */
+ *     --bg:     #1a1a2e;   /* change background     */
+ *   }
+ */
+
+/* ── Reset & base ──────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* Palette — override these to theme your page */
+  --bg:        #0d1117;
+  --surface:   #161b22;
+  --border:    #30363d;
+  --accent:    #58a6ff;       /* primary brand colour */
+  --accent-dk: #1f6feb;
+  --text:      #e6edf3;
+  --text-muted:#8b949e;
+  --success:   #3fb950;
+  --warning:   #d29922;
+  --danger:    #f85149;
+
+  /* Sizes */
+  --title-size:   clamp(2rem,  6vw, 4.5rem);
+  --body-size:    clamp(1.4rem, 3vw, 2.2rem);
+  --small-size:   clamp(1rem,  2vw, 1.5rem);
+  --btn-size:     clamp(1.2rem, 3vw, 2rem);
+  --radius:       1rem;
+  --radius-lg:    1.5rem;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.4;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Layout helpers ────────────────────────────────────────────────────── */
+.page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem 2.5rem;
+  gap: 1.5rem;
+  text-align: center;
+}
+
+.page-top {
+  justify-content: flex-start;
+  padding-top: 3rem;
+}
+
+/* ── Typography ────────────────────────────────────────────────────────── */
+.title {
+  font-size: var(--title-size);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--text);
+}
+
+.subtitle {
+  font-size: var(--body-size);
+  color: var(--text-muted);
+  font-weight: 400;
+  max-width: 80vw;
+}
+
+.body-text {
+  font-size: var(--body-size);
+  color: var(--text);
+  max-width: 85vw;
+  line-height: 1.5;
+}
+
+.small-text {
+  font-size: var(--small-size);
+  color: var(--text-muted);
+}
+
+/* ── Card ──────────────────────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem 2rem;
+  width: 100%;
+  max-width: 900px;
+}
+
+/* ── Buttons ───────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .6rem;
+  font-size: var(--btn-size);
+  font-weight: 600;
+  padding: .7em 1.6em;
+  border-radius: var(--radius);
+  border: none;
+  cursor: pointer;
+  transition: transform .1s, filter .15s;
+  -webkit-tap-highlight-color: transparent;
+  line-height: 1.2;
+}
+
+.btn:active  { transform: scale(.96); }
+.btn:hover   { filter: brightness(1.12); }
+
+.btn-primary  { background: var(--accent);   color: #000; }
+.btn-success  { background: var(--success);  color: #000; }
+.btn-warning  { background: var(--warning);  color: #000; }
+.btn-danger   { background: var(--danger);   color: #fff; }
+.btn-ghost    { background: var(--surface);  color: var(--text);
+                border: 2px solid var(--border); }
+.btn-large    { font-size: clamp(1.5rem, 4vw, 2.8rem);
+                padding: .8em 2em; border-radius: 1.25rem; }
+
+/* ── Menu grid ─────────────────────────────────────────────────────────── */
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  width: 100%;
+  max-width: 1000px;
+}
+
+/* ── Progress / timer bar ──────────────────────────────────────────────── */
+.timer-bar {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--border);
+  overflow: hidden;
+  width: 100%;
+  max-width: 700px;
+}
+.timer-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--accent);
+  transition: width .5s linear;
+}
+
+/* ── Pulse animation (listening indicator) ─────────────────────────────── */
+@keyframes pulse-ring {
+  0%   { transform: scale(.9); opacity: .9; }
+  70%  { transform: scale(1.15); opacity: .4; }
+  100% { transform: scale(.9); opacity: .9; }
+}
+.pulse {
+  display: inline-block;
+  animation: pulse-ring 1.6s ease-in-out infinite;
+}
+
+/* ── Status badges ─────────────────────────────────────────────────────── */
+.badge {
+  display: inline-block;
+  padding: .3em .9em;
+  border-radius: 9999px;
+  font-size: var(--small-size);
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.badge-success { background: var(--success); color: #000; }
+.badge-warning { background: var(--warning); color: #000; }
+.badge-danger  { background: var(--danger);  color: #fff; }
+.badge-info    { background: var(--accent);  color: #000; }
+
+/* ── Image display ─────────────────────────────────────────────────────── */
+.media-img {
+  max-width: min(70vw, 600px);
+  max-height: 40vh;
+  border-radius: var(--radius);
+  object-fit: contain;
+}
+
+/* ── List (info page) ──────────────────────────────────────────────────── */
+.info-list {
+  list-style: none;
+  width: 100%;
+  max-width: 800px;
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+}
+.info-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: .75rem;
+  font-size: var(--body-size);
+  text-align: left;
+}
+.info-list li::before {
+  content: '▸';
+  color: var(--accent);
+  flex-shrink: 0;
+  margin-top: .05em;
+}

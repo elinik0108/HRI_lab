@@ -1,0 +1,32 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+
+# ONNX / OpenVINO model weights — download separately
+quantized_models/
+*_openvino_model/
+*.onnx
+sherpa-onnx-*/
+vosk-model-*/
+
+# SQLite databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Secrets / local config
+.env
+.env.*
+
+# IDE / OS
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

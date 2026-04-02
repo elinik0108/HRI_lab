@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<!--
+  Pepper Tablet — Information Display page
+  ==========================================
+  Show a title, body text, optional image, and optional bullet-point list.
+  Useful for displaying instructions, product details, descriptions, etc.
+
+  URL parameters:
+    ?title=Did+you+know%3F         Title text
+    ?body=Here+is+some+info.       Main body paragraph
+    ?image=http://...              Optional image URL  (shown above body)
+    ?items=Point+1|Point+2|Point+3 Pipe-separated bullet list
+    ?color=#58a6ff                 Accent colour override
+    ?icon=💡                       Icon before the title (emoji)
+
+  Example (product display):
+    /tablet/info.html?title=Fresh+Salad&body=Ingredients...&image=https://.../salad.jpg
+
+  Example (instructions):
+    /tablet/info.html?title=How+to+play&items=Listen+to+the+question|Speak+your+answer|Score+a+point!
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Info</title>
+  <link rel="stylesheet" href="base.css">
+  <style>
+    .info-icon {
+      font-size: clamp(2.5rem, 8vw, 5rem);
+      line-height: 1;
+    }
+
+    /* Slide-in animation for list items */
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(-20px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    .info-list li {
+      opacity: 0;
+      animation: slideIn .4s ease forwards;
+    }
+  </style>
+</head>
+<body>
+  <div class="page page-top" style="gap:1.4rem; overflow-y:auto; min-height:100vh; padding-bottom:2rem;">
+    <span class="info-icon" id="icon-el" style="display:none"></span>
+    <h1 class="title" id="title-el" style="color:var(--accent)">Information</h1>
+    <img id="image-el" class="media-img" style="display:none" alt="">
+    <p class="body-text" id="body-el" style="display:none"></p>
+    <ul class="info-list" id="list-el" style="display:none"></ul>
+  </div>
+
+  <script>
+    const p = new URLSearchParams(location.search);
+
+    const title    = p.get('title') || 'Information';
+    const body     = p.get('body')  || '';
+    const rawItems = p.get('items') || '';
+    const image    = p.get('image') || '';
+    const color    = p.get('color') || '';
+    const icon     = p.get('icon')  || '';
+
+    document.getElementById('title-el').textContent = title;
+
+    if (icon) {
+      const el = document.getElementById('icon-el');
+      el.textContent = icon;
+      el.style.display = '';
+    }
+
+    if (color) {
+      document.documentElement.style.setProperty('--accent', color);
+    }
+
+    if (image) {
+      const el = document.getElementById('image-el');
+      el.src = image;
+      el.style.display = '';
+    }
+
+    if (body) {
+      const el = document.getElementById('body-el');
+      el.textContent = body;
+      el.style.display = '';
+    }
+
+    if (rawItems) {
+      const items = rawItems.split('|').map(s => s.trim()).filter(Boolean);
+      const list  = document.getElementById('list-el');
+      items.forEach((text, i) => {
+        const li = document.createElement('li');
+        li.textContent = text;
+        li.style.animationDelay = (i * 0.12) + 's';
+        list.appendChild(li);
+      });
+      list.style.display = '';
+    }
+  </script>
+</body>
+</html>

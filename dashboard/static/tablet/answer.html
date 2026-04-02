@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<!--
+  Pepper Tablet — Answer / Result page
+  =======================================
+  Show the result of a question, task, or interaction.
+
+  URL parameters:
+    ?result=correct              "correct" | "wrong" | "info" | "neutral"
+    ?title=Well+done%21          Title text (defaults per result type)
+    ?answer=The+sky+is+blue.     The answer / result text
+    ?detail=Extra+explanation    Optional secondary detail
+    ?image=http://...            Optional image URL
+    ?color=#58a6ff               Accent colour override (overrides result colour)
+
+  Examples:
+    /tablet/answer.html?result=correct&title=Correct%21&answer=The+sky+is+blue
+    /tablet/answer.html?result=wrong&answer=The+correct+answer+was%3A+blue
+    /tablet/answer.html?result=info&title=Did+you+know%3F&answer=The+sky+is+blue+because+of+Rayleigh+scattering.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Result</title>
+  <link rel="stylesheet" href="base.css">
+  <style>
+    .result-icon {
+      font-size: clamp(4rem, 14vw, 10rem);
+      line-height: 1;
+    }
+
+    /* Big pop-in animation */
+    @keyframes popIn {
+      0%   { transform: scale(0) rotate(-10deg); opacity: 0; }
+      70%  { transform: scale(1.1) rotate(3deg); }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+    .result-icon { animation: popIn .5s cubic-bezier(.34,1.56,.64,1) forwards; }
+
+    .result-title  {
+      font-size: var(--title-size);
+      font-weight: 800;
+      color: var(--result-color, var(--accent));
+    }
+
+    .answer-text {
+      font-size: var(--body-size);
+      max-width: 85vw;
+      line-height: 1.5;
+    }
+
+    .detail-text {
+      font-size: var(--small-size);
+      color: var(--text-muted);
+      max-width: 80vw;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="result-icon" id="icon-el">✅</div>
+    <h1 class="result-title" id="title-el">Correct!</h1>
+    <p  class="answer-text"  id="answer-el" style="display:none"></p>
+    <img id="image-el" class="media-img" style="display:none" alt="">
+    <p  class="detail-text"  id="detail-el" style="display:none"></p>
+  </div>
+
+  <script>
+    const RESULT_CONFIG = {
+      correct: { icon: '✅', title: 'Correct!',     color: '#3fb950' },
+      wrong:   { icon: '❌', title: 'Wrong!',        color: '#f85149' },
+      info:    { icon: 'ℹ️', title: 'Did you know?', color: '#58a6ff' },
+      neutral: { icon: '💬', title: 'Result',        color: '#8b949e' },
+    };
+
+    const p = new URLSearchParams(location.search);
+
+    const resultType = p.get('result') || 'neutral';
+    const cfg        = RESULT_CONFIG[resultType] || RESULT_CONFIG.neutral;
+
+    const title  = p.get('title')  || cfg.title;
+    const answer = p.get('answer') || '';
+    const detail = p.get('detail') || '';
+    const image  = p.get('image')  || '';
+    const color  = p.get('color')  || cfg.color;
+
+    document.getElementById('icon-el').textContent  = cfg.icon;
+    document.getElementById('title-el').textContent = title;
+    document.documentElement.style.setProperty('--result-color', color);
+
+    if (answer) {
+      const el = document.getElementById('answer-el');
+      el.textContent = answer;
+      el.style.display = '';
+    }
+
+    if (image) {
+      const el = document.getElementById('image-el');
+      el.src = image;
+      el.style.display = '';
+    }
+
+    if (detail) {
+      const el = document.getElementById('detail-el');
+      el.textContent = detail;
+      el.style.display = '';
+    }
+  </script>
+</body>
+</html>
