@@ -12,18 +12,20 @@ TextToSpeech(session)
 
 ---
 
-### `speak(text, animated=False) → None`
+### `speak(text, animated=True) → None`
 
-Speak *text*. Blocks until speech is finished.
+Speak *text* using `ALAnimatedSpeech` by default so Pepper gestures naturally.
+Blocks until speech is finished.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `text` | `str` | — | Text to say |
-| `animated` | `bool` | `False` | If `True`, adds body gestures |
+| `animated` | `bool` | `True` | If `True` (default), uses `ALAnimatedSpeech` with body gestures; set `False` for plain `ALTextToSpeech` |
 
 ```python
-tts.speak("Hello! I am Pepper.")
-tts.speak("Nice to meet you!", animated=True)
+tts.speak("Hello! I am Pepper.")              # animated by default
+tts.speak("Nice to meet you!")                # also animated
+tts.speak("Plain speech.", animated=False)    # no gestures
 ```
 
 ---

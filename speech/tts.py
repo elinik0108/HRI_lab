@@ -65,7 +65,7 @@ class TextToSpeech:
     # Core speech
     # ------------------------------------------------------------------
 
-    def speak(self, text: str, animated: bool = False) -> None:
+    def speak(self, text: str, animated: bool = True) -> None:
         """
         Make Pepper say *text*.
 
@@ -74,7 +74,8 @@ class TextToSpeech:
         text : str
             The sentence(s) to synthesise.
         animated : bool
-            If ``True``, use ``ALAnimatedSpeech`` so Pepper also moves.
+            If ``True`` (default), use ``ALAnimatedSpeech`` so Pepper also moves.
+            Set to ``False`` to use plain ``ALTextToSpeech``.
         """
         if not text:
             return

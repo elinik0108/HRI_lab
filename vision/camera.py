@@ -83,6 +83,9 @@ class PepperCamera:
         self._frame_ts = 0.0
         self._fps_samples = deque(maxlen=120)
 
+        from HRI_lab_Pepper.session import PepperSession
+        PepperSession.register_cleanup(self.stop)
+
     # ------------------------------------------------------------------
     # Lifecycle
     # ------------------------------------------------------------------

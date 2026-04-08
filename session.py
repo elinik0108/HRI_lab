@@ -26,6 +26,7 @@ class PepperSession:
     """Singleton wrapper around a qi.Session."""
 
     _session = None  # type: qi.Session | None
+    _cleanup_callbacks: list = []   # registered by modules, called on disconnect
 
     # ------------------------------------------------------------------
     @classmethod
@@ -157,12 +158,53 @@ class PepperSession:
 
     # ------------------------------------------------------------------
     @classmethod
+    def register_cleanup(cls, callback) -> None:
+        """
+        Register a zero-argument callable to be called during
+        :meth:`disconnect` (in LIFO order) before the session is closed.
+
+        Modules should call this in their ``__init__`` so that their
+        service subscriptions are always cleaned up, even if the user
+        forgets to call ``stop()`` / ``unsubscribe()`` themselves.
+
+        Example::
+
+            class SomeModule:
+                def __init__(self, session):
+                    self._svc = session.service("ALSomeService")
+                    self._svc.subscribe("MyModule")
+                    PepperSession.register_cleanup(self._cleanup)
+
+                def _cleanup(self):
+                    try:
+                        self._svc.unsubscribe("MyModule")
+                    except Exception:
+                        pass
+        """
+        cls._cleanup_callbacks.append(callback)
+
+    # ------------------------------------------------------------------
+    @classmethod
     def disconnect(cls) -> None:
-        """Close the session and reset the singleton."""
-        if cls._session is not None:
+        """
+        Run all registered cleanup callbacks (LIFO), then close the session.
+        """
+        if cls._session is None:
+            return
+
+        # Call cleanups in reverse registration order (LIFO) so that
+        # higher-level modules are torn down before lower-level ones.
+        callbacks = list(reversed(cls._cleanup_callbacks))
+        cls._cleanup_callbacks.clear()
+        for cb in callbacks:
             try:
-                cls._session.close()
-            except Exception:
-                pass
-            cls._session = None
-            print(f"{B}[PepperSession] Disconnected.{W}")
+                cb()
+            except Exception as exc:
+                print(f"{R}[PepperSession] Cleanup error ({cb}): {exc}{W}")
+
+        try:
+            cls._session.close()
+        except Exception:
+            pass
+        cls._session = None
+        print(f"{B}[PepperSession] Disconnected.{W}")

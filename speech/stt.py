@@ -117,6 +117,9 @@ class SpeechToText:
         self._result_text = ""
         self._done_event  = threading.Event()
 
+        from HRI_lab_Pepper.session import PepperSession
+        PepperSession.register_cleanup(self.unsubscribe)
+
     # ------------------------------------------------------------------
     # Naoqi audio callback
     # ------------------------------------------------------------------

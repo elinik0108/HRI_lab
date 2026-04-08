@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=42"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "HRI-lab-Pepper"
+version = "1.0.0"
+description = "HRI Lab Pepper robot control framework"
+requires-python = ">=3.9"
+# Runtime deps are managed by install.sh / install_gpu.sh
+dependencies = []
+
+[tool.setuptools]
+# The Python package HRI_lab_Pepper/ lives in the parent directory
+# (the directory that contains this repo).  Editable installs will add
+# that parent dir to sys.path so `import HRI_lab_Pepper` resolves correctly.
+package-dir = {"" = ".."}
+
+[tool.setuptools.packages.find]
+where = [".."]
+include = ["HRI_lab_Pepper*"]

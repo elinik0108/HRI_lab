@@ -40,6 +40,9 @@ class BasicAwareness:
         self._memory     = session.service("ALMemory")
         print(f"{B}[Awareness] Ready.{W}")
 
+        from HRI_lab_Pepper.session import PepperSession
+        PepperSession.register_cleanup(self.stop)
+
     # ------------------------------------------------------------------
     # Lifecycle
     # ------------------------------------------------------------------

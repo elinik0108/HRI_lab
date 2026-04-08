@@ -51,6 +51,7 @@ from HRI_lab_Pepper.speech.tts import TextToSpeech
 from HRI_lab_Pepper.motion.posture import RobotPosture
 from HRI_lab_Pepper.motion.tracker import RobotTracker
 from HRI_lab_Pepper.motion.leds import RobotLEDs
+from HRI_lab_Pepper.motion.animation_player import AnimationPlayer
 from HRI_lab_Pepper.interaction.awareness import BasicAwareness
 from HRI_lab_Pepper.interaction.touch import TouchSensor
 
@@ -385,20 +386,61 @@ def _deploy_tablet_pages(robot_ip: str, dash_url: str) -> bool:
     tablet_dir  = _STATIC_DIR / "tablet"
     remote_base = ".local/share/PackageManager/apps/tablet/html"
 
-    # Pepper's SSH server only allows keyboard-interactive auth (not plain
-    # password auth), so we use paramiko.Transport directly instead of
-    # SSHClient.connect(password=...) which tries the wrong auth method.
+    # Pepper's SSH server accepts keyboard-interactive auth.
+    # We try three methods in order:
+    #   1. auth_interactive  (most correct for Pepper)
+    #   2. auth_password     (works on some firmware versions)
+    #   3. publickey via ~/.ssh/id_rsa or id_ed25519 (if the user has set it up)
     transport = None
     sftp      = None
     try:
         transport = paramiko.Transport((robot_ip, 22))
-        transport.connect()
+        transport.connect()   # TCP + SSH handshake only (no auth yet)
 
         def _ki_handler(title, instructions, prompt_list):
-            # For each prompt (usually just "Password:"), return "nao"
             return ["nao" for _ in prompt_list]
 
-        transport.auth_interactive("nao", _ki_handler)
+        authenticated = False
+
+        # ── Method 1: keyboard-interactive ──────────────────────────
+        try:
+            transport.auth_interactive("nao", _ki_handler)
+            authenticated = True
+        except paramiko.AuthenticationException:
+            pass
+
+        # ── Method 2: plain password ─────────────────────────────────
+        if not authenticated:
+            try:
+                transport.auth_password("nao", "robofun")
+                authenticated = True
+            except paramiko.AuthenticationException:
+                pass
+
+        # ── Method 3: public key ──────────────────────────────────────
+        if not authenticated:
+            import os, pathlib
+            for key_file in ("id_ed25519", "id_rsa", "id_ecdsa"):
+                key_path = pathlib.Path.home() / ".ssh" / key_file
+                if not key_path.exists():
+                    continue
+                try:
+                    if key_file.startswith("id_ed25519"):
+                        key = paramiko.Ed25519Key.from_private_key_file(str(key_path))
+                    elif key_file.startswith("id_ecdsa"):
+                        key = paramiko.ECDSAKey.from_private_key_file(str(key_path))
+                    else:
+                        key = paramiko.RSAKey.from_private_key_file(str(key_path))
+                    transport.auth_publickey("nao", key)
+                    authenticated = True
+                    break
+                except Exception:
+                    pass
+
+        if not authenticated:
+            raise paramiko.AuthenticationException("all auth methods failed")
+
+        print(f"[TABLET] SSH authenticated to {robot_ip}")
         sftp = paramiko.SFTPClient.from_transport(transport)
     except Exception as exc:
         print(f"[TABLET] SSH connect failed ({exc}) — using laptop URLs (less reliable).")
@@ -485,16 +527,17 @@ def robot_loop(args):
     print(f"[INIT] Dashboard URL (for tablet): {_dashboard_base_url}")
 
     print("[INIT] Loading modules ...")
-    cam         = PepperCamera(session)
-    humans      = HumanDetector()
-    objects     = ObjectDetector()
-    stt         = SpeechToText(session)
-    tts         = TextToSpeech(session)
-    posture     = RobotPosture(session)
-    tracker     = RobotTracker(session)
-    leds        = RobotLEDs(session)
-    awareness   = BasicAwareness(session)
-    touch       = TouchSensor(session)
+    cam          = PepperCamera(session)
+    humans       = HumanDetector()
+    objects      = ObjectDetector()
+    stt          = SpeechToText(session)
+    tts          = TextToSpeech(session)
+    posture      = RobotPosture(session)
+    tracker      = RobotTracker(session)
+    leds         = RobotLEDs(session)
+    anim_player  = AnimationPlayer(session)
+    awareness    = BasicAwareness(session)
+    touch        = TouchSensor(session)
     from HRI_lab_Pepper.interaction.tablet import TabletService
     tablet_svc  = TabletService(session)
     _al_life    = session.service("ALAutonomousLife")
@@ -583,6 +626,12 @@ def robot_loop(args):
                             print(f"[CORE] Ability '{ability}' → {'ON' if on else 'OFF'}")
                         except Exception as exc:
                             print(f"[CORE] Could not set ability '{ability}': {exc}")
+
+                elif ctype == "animate":
+                    path = cargs.get("path", "")
+                    if path:
+                        print(f"[ANIM] → {path}")
+                        anim_player.run_async(path)
 
                 elif ctype == "breathing":
                     on = bool(cargs.get("on", False))
@@ -794,6 +843,16 @@ def run(url: str = "tcp://172.18.48.50:9559", port: int = 8080) -> None:
 
     uvicorn.run(app, host="0.0.0.0", port=port, log_level="warning")
 
+def create_menu_page(img_urls: list = None) -> None:
+    if img_urls is None:
+        img_urls = [f"https://via.placeholder.com/150?text=Item+{i+1}" for i in range(number_items)]
+
+    # create the html and save it locally
+    html_content = f"""
+
+    """
+    with open(_STATIC_DIR / "tablet" / "menu.html", "w") as f:
+        f.write(html_content)
 
 def _cli() -> None:
     """Argument-parser entry point used by ``__main__.py``."""

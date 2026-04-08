@@ -81,6 +81,9 @@ class TouchSensor:
         self._handles: dict = {}
         print(f"{B}[Touch] Ready.{W}")
 
+        from HRI_lab_Pepper.session import PepperSession
+        PepperSession.register_cleanup(self.remove_all_events)
+
     # ------------------------------------------------------------------
 
     def on_event(

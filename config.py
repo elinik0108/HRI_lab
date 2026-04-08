@@ -25,15 +25,15 @@ STT_MIC_CHANNEL = 3         # 3 = front mic
 STT_TIMEOUT_SEC = 15
 STT_VAD_RMS_MIN = 100       # Minimum RMS to consider as speech
 
-MODELS_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "dialog_pepper")
+MODELS_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".", "models")
 VOSK_MODEL_NAME = "vosk-model-small-en-us-0.15"
 VOSK_MODEL_URL  = f"https://alphacephei.com/vosk/models/{VOSK_MODEL_NAME}.zip"
 
 # ── DL Models — OpenVINO (no PyTorch / cuDNN required) ───────────────────────
-# YOLOv8n exported to OpenVINO IR format by the install script.
-# The model directory contains yolov8n.xml + yolov8n.bin
+# YOLOv8s exported to OpenVINO IR format by the install script.
+# The model directory contains yolov8s.xml + yolov8s.bin
 _REPO_ROOT        = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-YOLO_DETECT_MODEL = os.path.join(_REPO_ROOT, "yolov8n_openvino_model", "yolov8n.xml")
+YOLO_DETECT_MODEL = os.path.join(_REPO_ROOT, "HRI_lab_Pepper/yolov8s_openvino_model", "yolov8s.xml")
 
 # OpenVINO device — override with PEPPER_API_DEVICE env var (CPU / GPU)
 def _ov_device() -> str:
