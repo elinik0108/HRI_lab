@@ -128,6 +128,60 @@
   .side-panel { overflow-y:auto; }
   .side-panel::-webkit-scrollbar { width:3px; }
   .side-panel::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
+
+  /* ── Control sub-panels ── */
+  .ctrl-panel {
+    background:#0a1020; border:1px solid var(--border); border-radius:8px;
+    display:flex; flex-direction:column; overflow:hidden; flex-shrink:0;
+  }
+  .ctrl-panel-hdr {
+    font-size:.55rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--muted); background:linear-gradient(90deg,#131d2e,#0f1929);
+    border-bottom:1px solid var(--border); padding:.22rem .65rem;
+    white-space:nowrap; display:flex; align-items:center; gap:.35rem; flex-shrink:0;
+  }
+  .ctrl-panel-body {
+    display:flex; flex-wrap:wrap; align-items:center; gap:.35rem;
+    padding:.38rem .55rem; flex:1;
+  }
+
+  /* ── DB mini-panel rows ── */
+  .db-row { display:flex; align-items:baseline; gap:.4rem; padding:.22rem 0;
+    border-bottom:1px solid #0d1526; font-size:.6rem; }
+  .db-row:last-child { border-bottom:none; }
+  .db-row .db-ts { color:var(--muted); font-family:'JetBrains Mono',monospace;
+    font-size:.52rem; flex-shrink:0; white-space:nowrap; }
+  .db-row .db-role { flex-shrink:0; padding:.05rem .35rem; border-radius:9999px;
+    font-size:.52rem; font-weight:700; }
+  .db-row .db-role.robot { background:rgba(59,130,246,.18); color:#60a5fa; }
+  .db-row .db-role.user  { background:rgba(34,197,94,.14);  color:#4ade80; }
+  .db-row .db-role.other { background:rgba(148,163,184,.12);color:#94a3b8; }
+  .db-row .db-txt { flex:1; overflow:hidden; white-space:nowrap;
+    text-overflow:ellipsis; color:#cbd5e1; min-width:0; }
+
+  /* ── Range sliders ── */
+  .ctrl-slider {
+    -webkit-appearance:none; appearance:none; height:3px;
+    background:#1a2540; border-radius:2px; outline:none; cursor:pointer; flex:1; min-width:5rem;
+  }
+  .ctrl-slider::-webkit-slider-thumb {
+    -webkit-appearance:none; width:11px; height:11px;
+    border-radius:50%; background:var(--accent); cursor:pointer; transition:transform .1s;
+  }
+  .ctrl-slider::-webkit-slider-thumb:hover { transform:scale(1.3); }
+  .ctrl-slider::-moz-range-thumb {
+    width:11px; height:11px; border-radius:50%;
+    background:var(--accent); cursor:pointer; border:none;
+  }
+  .sldr-row { display:flex; align-items:center; gap:.45rem; width:100%; }
+  .sldr-lbl {
+    font-size:.55rem; color:var(--muted); white-space:nowrap;
+    font-family:'JetBrains Mono',monospace; width:3.8rem; flex-shrink:0;
+  }
+  .sldr-val {
+    font-size:.58rem; font-family:'JetBrains Mono',monospace;
+    color:#94a3b8; width:2.5rem; text-align:right; flex-shrink:0;
+  }
 </style>
 </head>
 <body class="flex flex-col select-none" style="height:100vh">
@@ -279,6 +333,24 @@
               <div class="bar-track" style="background:transparent"></div>
               <span id="val-temp" class="bar-val" style="color:#4ade80">—</span></div>
           </div>
+          <div class="pt-1.5 mt-1 border-t" style="border-color:#1a2540">
+            <button class="btn b-danger" style="width:100%;justify-content:center" onclick="shutdown()">⏹ Stop All</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Database panel -->
+      <div class="card flex-shrink-0">
+        <div class="card-hdr">
+          <span><span class="hi">⬡</span>Database</span>
+          <div class="flex items-center gap-2.5">
+            <span id="db-panel-count" class="text-[.52rem] font-mono" style="color:#475569"></span>
+            <button onclick="loadDBPanel()" class="text-[.55rem] transition-colors" style="color:#475569" onmouseover="this.style.color='#e2e8f0'" onmouseout="this.style.color='#475569'" title="Refresh">↻</button>
+            <button onclick="openDB()" class="btn b-slate" style="padding:.14rem .5rem;font-size:.55rem">⊞ View All</button>
+          </div>
+        </div>
+        <div class="px-2.5 py-1.5" id="db-panel-rows">
+          <div class="text-[.6rem] text-center py-3" style="color:#334155">Loading…</div>
         </div>
       </div>
 
@@ -286,82 +358,87 @@
   </div>
 
   <!-- ══ CONTROLS BAR ══ -->
-  <!--
-    Order rationale:
-      1. Speech + Animations — primary HRI interaction (highest frequency)
-      2. Posture + Awareness — robot physical state (set at start of demo)
-      3. LEDs — emotional expression (used during demo)
-      4. Tablet — display content (used during demo)
-      5. Autonomy — background behaviors (set-and-forget)
-      → Stop All — danger zone, isolated right
-  -->
   <div class="card flex-shrink-0" style="overflow:visible">
-    <div class="flex flex-wrap items-center gap-x-2 gap-y-1.5 px-3 py-2">
+    <div class="flex items-stretch gap-1.5 px-2 py-1.5">
 
-      <!-- 1· Speech + Animation -->
-      <div class="flex items-center gap-1.5">
-        <input id="tts-input" class="tts-in" type="text" placeholder="Say something to Pepper…"
-               style="width:17rem" onkeydown="if(event.key==='Enter')sendTTS()">
-        <button class="btn b-purple" onclick="sendTTS()">🔊 Say</button>
-        <button class="btn b-purple" style="opacity:.85" onclick="openAnimModal()">🎭 Animate</button>
+      <!-- ① Speech + TTS sliders -->
+      <div class="ctrl-panel">
+        <div class="ctrl-panel-hdr">🔊 Speech</div>
+        <div class="ctrl-panel-body" style="flex-direction:column;align-items:stretch;gap:.38rem">
+          <div class="flex items-center gap-1.5">
+            <input id="tts-input" class="tts-in" type="text" placeholder="Say something to Pepper…"
+                   style="width:15rem" onkeydown="if(event.key==='Enter')sendTTS()">
+            <button class="btn b-purple" onclick="sendTTS()">🔊 Say</button>
+            <button class="btn b-purple" style="opacity:.85" onclick="openAnimModal()">🎭 Animate</button>
+          </div>
+          <div class="sldr-row">
+            <span class="sldr-lbl">📢 Vol</span>
+            <input type="range" class="ctrl-slider" min="0" max="100" value="50" id="vol-slider"
+                   oninput="setVolume(this.value)">
+            <span class="sldr-val" id="vol-val">80%</span>
+          </div>
+          <div class="sldr-row">
+            <span class="sldr-lbl">⏩ Speed</span>
+            <input type="range" class="ctrl-slider" min="50" max="150" value="100" id="spd-slider"
+                   oninput="setSpeed(this.value)">
+            <span class="sldr-val" id="spd-val">100%</span>
+          </div>
+        </div>
       </div>
 
-      <div class="cdiv"></div>
-
-      <!-- 2· Posture + Awareness -->
-      <div class="flex items-center gap-1.5">
-        <span class="lbl">Posture</span>
-        <button class="btn b-sky"   onclick="cmd('posture',{name:'Stand'})">Stand</button>
-        <button class="btn b-blue"  onclick="cmd('posture',{name:'StandInit'})">Init</button>
-        <button class="btn b-slate" onclick="cmd('posture',{name:'Crouch'})">Crouch</button>
-      </div>
-      <div class="cdiv"></div>
-      <div class="flex items-center gap-1.5">
-        <span class="lbl">Awareness</span>
-        <button class="btn b-green" id="btn-aware-start" onclick="setAwareness(true)">▶ On</button>
-        <button class="btn b-slate" id="btn-aware-stop"  onclick="setAwareness(false)">◼ Off</button>
-      </div>
-
-      <div class="cdiv"></div>
-
-      <!-- 3· LEDs -->
-      <div class="flex items-center gap-1.5">
-        <span class="lbl">LEDs</span>
-        <button class="btn b-green"  onclick="cmd('led',{preset:'happy'})">😊 Happy</button>
-        <button class="btn b-blue"   onclick="cmd('led',{preset:'thinking'})">💭 Think</button>
-        <button class="btn b-indigo" onclick="cmd('led',{preset:'sad'})">😢 Sad</button>
-        <button class="btn b-rose"   onclick="cmd('led',{preset:'error'})">⚠ Error</button>
-        <button class="btn b-slate"  onclick="cmd('led',{preset:'off'})">Off</button>
+      <!-- ② Body: Posture + Awareness -->
+      <div class="ctrl-panel">
+        <div class="ctrl-panel-hdr">🧍 Body</div>
+        <div class="ctrl-panel-body" style="flex-direction:column;align-items:flex-start;gap:.35rem;justify-content:center">
+          <div class="flex items-center gap-1">
+            <span class="lbl" style="width:3.2rem;flex-shrink:0">Posture</span>
+            <button class="btn b-sky"   onclick="cmd('posture',{name:'Stand'})">Stand</button>
+            <button class="btn b-blue"  onclick="cmd('posture',{name:'StandInit'})">Init</button>
+            <button class="btn b-slate" onclick="cmd('posture',{name:'Crouch'})">Crouch</button>
+          </div>
+          <div class="flex items-center gap-1">
+            <span class="lbl" style="width:3.2rem;flex-shrink:0">Aware</span>
+            <button class="btn b-green" id="btn-aware-start" onclick="setAwareness(true)">▶ On</button>
+            <button class="btn b-slate" id="btn-aware-stop"  onclick="setAwareness(false)">◼ Off</button>
+          </div>
+        </div>
       </div>
 
-      <div class="cdiv"></div>
-
-      <!-- 4· Tablet display -->
-      <div class="flex items-center gap-1.5">
-        <span class="lbl">Tablet</span>
-        <button class="btn b-teal" onclick="showTablet('welcome.html',  'title=Welcome&subtitle=Hello!')">Welcome</button>
-        <button class="btn b-teal" onclick="showTablet('listening.html','prompt=Listening...')">Listen</button>
-        <button class="btn b-teal" onclick="showTablet('question.html', 'question=?')">Ask</button>
-        <button class="btn b-teal" onclick="showTablet('answer.html',   'result=info&title=Answer')">Answer</button>
-        <button class="btn b-teal" onclick="showTablet('menu.html',     'title=Menu&items=Option+1,Option+2')">Menu</button>
-        <button class="btn b-teal" onclick="showTablet('info.html',     'title=Info')">Info</button>
-        <button class="btn b-slate" onclick="hideTablet()">Hide</button>
+      <!-- ③ LEDs -->
+      <div class="ctrl-panel">
+        <div class="ctrl-panel-hdr">💡 LEDs</div>
+        <div class="ctrl-panel-body" style="justify-content:center">
+          <button class="btn b-green"  onclick="cmd('led',{preset:'happy'})">😊 Happy</button>
+          <button class="btn b-blue"   onclick="cmd('led',{preset:'thinking'})">💭 Think</button>
+          <button class="btn b-indigo" onclick="cmd('led',{preset:'sad'})">😢 Sad</button>
+          <button class="btn b-rose"   onclick="cmd('led',{preset:'error'})">⚠ Error</button>
+          <button class="btn b-slate"  onclick="cmd('led',{preset:'off'})">Off</button>
+        </div>
       </div>
 
-      <div class="cdiv"></div>
-
-      <!-- 5· Autonomous behaviors -->
-      <div class="flex items-center gap-1.5">
-        <span class="lbl">Auto</span>
-        <button class="tog off" id="btn-bgmove" onclick="toggleAbility('BackgroundMovement',this)">Move</button>
-        <button class="tog off" id="btn-blink"  onclick="toggleAbility('AutonomousBlinking',this)">Blink</button>
-        <button class="tog off" id="btn-breath" onclick="toggleBreathing(this)">Breathe</button>
-        <button class="tog off" id="btn-spmove" onclick="toggleAbility('SpeakingMovement',this)">Talk</button>
+      <!-- ④ Tablet display -->
+      <div class="ctrl-panel">
+        <div class="ctrl-panel-hdr">📱 Tablet</div>
+        <div class="ctrl-panel-body" style="justify-content:center">
+          <button class="btn b-teal" onclick="showTablet('welcome.html',  'title=Welcome&subtitle=Hello!')">Welcome</button>
+          <button class="btn b-teal" onclick="showTablet('listening.html','prompt=Listening...')">Listen</button>
+          <button class="btn b-teal" onclick="showTablet('question.html', 'question=?')">Ask</button>
+          <button class="btn b-teal" onclick="showTablet('answer.html',   'result=info&title=Answer')">Answer</button>
+          <button class="btn b-teal" onclick="showTablet('menu.html',     'title=Menu&items=Option+1,Option+2')">Menu</button>
+          <button class="btn b-teal" onclick="showTablet('info.html',     'title=Info')">Info</button>
+          <button class="btn b-slate" onclick="hideTablet()">Hide</button>
+        </div>
       </div>
 
-      <!-- → right-pinned danger zone -->
-      <div class="flex items-center ml-auto">
-        <button class="btn b-danger" onclick="shutdown()">⏹ Stop All</button>
+      <!-- ⑤ Autonomous behaviors -->
+      <div class="ctrl-panel">
+        <div class="ctrl-panel-hdr">🤖 Auto</div>
+        <div class="ctrl-panel-body" style="justify-content:center">
+          <button class="tog off" id="btn-bgmove" onclick="toggleAbility('BackgroundMovement',this)">Move</button>
+          <button class="tog off" id="btn-blink"  onclick="toggleAbility('AutonomousBlinking',this)">Blink</button>
+          <button class="tog off" id="btn-breath" onclick="toggleBreathing(this)">Breathe</button>
+          <button class="tog off" id="btn-spmove" onclick="toggleAbility('SpeakingMovement',this)">Talk</button>
+        </div>
       </div>
 
     </div>
@@ -430,10 +507,14 @@ function makeSplitter(splId, fixedPaneId, dir) {
   });
 }
 
-// init both splitters on load
+// init both splitters + slider fills on load
 window.addEventListener('DOMContentLoaded', () => {
   makeSplitter('spl-v', 'pane-right',   'v');
   makeSplitter('spl-h', 'pane-console', 'h');
+  _fillSlider(document.getElementById('vol-slider'));
+  _fillSlider(document.getElementById('spd-slider'));
+  loadDBPanel();
+  setInterval(loadDBPanel, 10000);
 });
 
 /* ═══════════════════════════════ WEBSOCKET ════════════════════════════════ */
@@ -579,6 +660,54 @@ function showTablet(page, params) {
 }
 function hideTablet() { cmd('tablet_hide', {}); toast('Tablet hidden','#64748b'); }
 
+function _fillSlider(el) {
+  const min = +(el.min||0), max = +(el.max||100), val = +el.value;
+  const pct = ((val - min) / (max - min) * 100).toFixed(1);
+  el.style.background = `linear-gradient(to right,var(--accent) ${pct}%,#1a2540 ${pct}%)`;
+}
+
+let _volTimer = null, _spdTimer = null;
+
+function setVolume(v) {
+  document.getElementById('vol-val').textContent = v + '%';
+  _fillSlider(document.getElementById('vol-slider'));
+  clearTimeout(_volTimer);
+  _volTimer = setTimeout(() => cmd('tts_volume', {value: parseInt(v)}), 80);
+}
+function setSpeed(v) {
+  document.getElementById('spd-val').textContent = v + '%';
+  _fillSlider(document.getElementById('spd-slider'));
+  clearTimeout(_spdTimer);
+  _spdTimer = setTimeout(() => cmd('tts_speed', {value: parseInt(v)}), 80);
+}
+
+/* ═════════════════════════════ DB PANEL (sidebar) ════════════════════════ */
+async function loadDBPanel() {
+  const container = document.getElementById('db-panel-rows');
+  try {
+    const resp = await fetch('/api/db/recent?n=5');
+    const data = await resp.json();
+    const rows = data.rows || [];
+    const cnt  = document.getElementById('db-panel-count');
+    if (cnt) cnt.textContent = rows.length ? rows.length + ' recent' : '';
+    if (!rows.length) {
+      container.innerHTML = '<div class="text-[.6rem] text-center py-3" style="color:#334155">No entries yet.</div>';
+      return;
+    }
+    container.innerHTML = rows.slice().reverse().map(row => {
+      const roleClass = row.role === 'robot' ? 'robot' : row.role === 'user' ? 'user' : 'other';
+      const ts = (row.ts || '').replace('T', ' ').slice(5, 16);   // MM-DD HH:MM
+      return `<div class="db-row">
+        <span class="db-ts">${esc(ts)}</span>
+        <span class="db-role ${roleClass}">${esc(row.role || '?')}</span>
+        <span class="db-txt" title="${esc(row.text || '')}">${esc(row.text || '')}</span>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    container.innerHTML = `<div class="text-[.58rem] text-center py-2" style="color:#ef4444">${esc(String(e))}</div>`;
+  }
+}
+
 /* ══════════════════════════════ DB MODAL ═════════════════════════════════ */
 function openDB() {
   document.getElementById('db-modal').classList.remove('hidden');
@@ -586,6 +715,7 @@ function openDB() {
 }
 function closeDB() {
   document.getElementById('db-modal').classList.add('hidden');
+  loadDBPanel();   // keep sidebar panel in sync
 }
 
 async function loadDB() {

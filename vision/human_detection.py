@@ -3,10 +3,13 @@
 #                     HRI_lab_Pepper — Human Detection Module
 # =============================================================================
 """
-Detects people in a camera frame using YOLOv8n via OpenVINO.
+Detects people in a camera frame using YOLOv8s.
 
-No PyTorch or cuDNN required.  OpenVINO is Intel's own inference engine and
-gives ~2–3× faster throughput than plain ONNX Runtime on Intel CPUs (AVX2).
+Backend is selected automatically by ``config.INFERENCE_DEVICE``:
+
+* ``"cuda"``  — NVIDIA GPU via ultralytics + PyTorch (fastest on CUDA machines).
+* ``"GPU"``   — Intel iGPU/dGPU via the OpenVINO GPU plugin.
+* ``"CPU"``   — OpenVINO CPU backend (always available, safe fallback).
 
 Usage
 -----
@@ -29,8 +32,10 @@ import cv2
 import numpy as np
 
 from HRI_lab_Pepper.config import (
-    B, W,
+    B, W, R,
     YOLO_DETECT_MODEL,
+    YOLO_PT_MODEL,
+    INFERENCE_DEVICE,
 )
 
 # YOLOv8 input size
@@ -39,42 +44,86 @@ _YOLO_SIZE = 640
 
 class HumanDetector:
     """
-    People detector — YOLOv8n exported to OpenVINO IR, run via ``openvino``.
+    People detector — auto-selects the best available inference backend.
 
     Parameters
     ----------
     model_path : str, optional
-        Path to the OpenVINO model XML file (``yolov8n_openvino_model/yolov8n.xml``).
-        Defaults to the value in ``config.py``.
+        Path to the OpenVINO model XML file used by the CPU/GPU (OpenVINO)
+        backend.  Defaults to ``config.YOLO_DETECT_MODEL``.
+    pt_model_path : str, optional
+        Path to the YOLOv8 ``.pt`` weights file used by the CUDA backend.
+        Defaults to ``config.YOLO_PT_MODEL``.
     conf_threshold : float
         Minimum confidence to keep a detection (default 0.45).
     iou_threshold : float
         NMS IoU threshold (default 0.45).
     device : str, optional
-        OpenVINO device string — ``"CPU"`` (default) or ``"GPU"`` if an
-        Intel iGPU is present.  Ignored on student GT 1030 machines.
+        Target device: ``"cuda"``, ``"GPU"``, or ``"CPU"``.
+        Defaults to ``config.INFERENCE_DEVICE`` (auto-detected at import time).
     """
 
     def __init__(
         self,
         model_path: str = YOLO_DETECT_MODEL,
+        pt_model_path: str = YOLO_PT_MODEL,
         conf_threshold: float = 0.45,
         iou_threshold: float = 0.45,
-        device: str = "CPU",
+        device: str = INFERENCE_DEVICE,
     ) -> None:
-        import openvino as ov
-
         self._conf = conf_threshold
         self._iou  = iou_threshold
 
+        if device == "cuda":
+            self._backend = self._try_init_cuda(pt_model_path)
+        else:
+            self._backend = None
+
+        if self._backend is None:
+            # Fall back to OpenVINO (GPU or CPU)
+            ov_device = device if device in ("GPU", "AUTO") else "CPU"
+            self._init_openvino(model_path, ov_device)
+
+    # ------------------------------------------------------------------
+    # Backend initialisation helpers
+    # ------------------------------------------------------------------
+
+    def _try_init_cuda(self, pt_model_path: str) -> str | None:
+        """Try to load the ultralytics YOLO model on CUDA. Returns ``"cuda"`` on
+        success, or ``None`` if the required libraries are not available."""
+        try:
+            from ultralytics import YOLO as _YOLO
+
+            print(f"{B}[HumanDetector] Loading {pt_model_path} via ultralytics (CUDA) …{W}")
+            self._yolo = _YOLO(pt_model_path)
+            self._yolo.to("cuda")
+            print(f"{B}[HumanDetector] Ready — ultralytics CUDA{W}")
+            return "cuda"
+        except ImportError:
+            print(f"{R}[HumanDetector] ultralytics not installed — falling back to OpenVINO CPU.{W}")
+            return None
+        except Exception as exc:
+            print(f"{R}[HumanDetector] CUDA init failed ({exc}) — falling back to OpenVINO CPU.{W}")
+            return None
+
+    def _init_openvino(self, model_path: str, device: str) -> None:
+        import openvino as ov
+
         print(f"{B}[HumanDetector] Loading {model_path} via OpenVINO …{W}")
-        core = ov.Core()
-        model = core.read_model(model_path)
-        # Set inference precision to FP32 for correctness on AVX2 (no tensor cores)
-        compiled = core.compile_model(model, device)
-        self._infer   = compiled.create_infer_request()
-        self._inp_key = compiled.input(0)
-        print(f"{B}[HumanDetector] Ready — OpenVINO {device}{W}")
+        try:
+            core     = ov.Core()
+            ov_model = core.read_model(model_path)
+            compiled = core.compile_model(ov_model, device)
+            self._infer   = compiled.create_infer_request()
+            self._inp_key = compiled.input(0)
+            self._backend = f"openvino_{device.lower()}"
+            print(f"{B}[HumanDetector] Ready — OpenVINO {device}{W}")
+        except Exception as exc:
+            if device != "CPU":
+                print(f"{R}[HumanDetector] OpenVINO {device} failed ({exc}) — retrying with CPU.{W}")
+                self._init_openvino(model_path, "CPU")
+            else:
+                raise
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -130,6 +179,33 @@ class HumanDetector:
         if frame is None:
             return []
 
+        if self._backend == "cuda":
+            return self._detect_ultralytics(frame)
+        return self._detect_openvino(frame)
+
+    # ------------------------------------------------------------------
+    # Backend-specific inference
+    # ------------------------------------------------------------------
+
+    def _detect_ultralytics(self, frame: np.ndarray) -> List[Dict[str, Any]]:
+        results = self._yolo.predict(
+            frame,
+            verbose=False,
+            conf=self._conf,
+            iou=self._iou,
+            classes=[0],  # person only
+        )
+        detections: List[Dict[str, Any]] = []
+        for r in results:
+            for box in r.boxes:
+                x1, y1, x2, y2 = (int(v) for v in box.xyxy[0].tolist())
+                detections.append({
+                    "bbox":       [x1, y1, x2, y2],
+                    "confidence": float(box.conf[0]),
+                })
+        return detections
+
+    def _detect_openvino(self, frame: np.ndarray) -> List[Dict[str, Any]]:
         inp, r, pad_top, pad_left, h0, w0 = self._letterbox(frame)
 
         # Run OpenVINO inference — output shape: [1, 84, 8400]
@@ -173,6 +249,7 @@ class HumanDetector:
                 "confidence": float(confs[i]),
             })
         return result
+
 
     def is_someone_present(self, frame: np.ndarray) -> bool:
         """

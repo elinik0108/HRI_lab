@@ -1,0 +1,17 @@
+{
+  "name": "pepper-tablet-build",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Build tool: transpile tablet pages ES6+ → ES5 for Pepper's embedded Chromium browser.",
+  "scripts": {
+    "build": "node build.js"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.24.0",
+    "@babel/preset-env": "^7.24.0"
+  },
+  "dependencies": {
+    "whatwg-fetch": "^3.6.20",
+    "url-search-params-polyfill": "^8.2.5"
+  }
+}

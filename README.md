@@ -206,7 +206,7 @@ print(det.get_labels())
 ### `TabletService` — Chest Tablet
 
 ```python
-from HRI_lab_Pepper.interaction.tablet import TabletService
+from HRI_lab_Pepper.tablet import TabletService
 
 tablet = TabletService(session)
 
@@ -225,6 +225,11 @@ tablet.set_on_touch_callback(on_touch)
 tablet.set_brightness(0.9)
 tablet.hide()   # blank the screen
 ```
+
+> **Built-in pages** live in `dashboard/static/tablet/dist/` (compiled ES5).  
+> See [docs/tablet.md](docs/tablet.md) for the full page catalogue and the
+> `deploy_tablet_pages()` helper that copies them to the robot via SSH so the
+> tablet loads them over its internal WiFi bridge (faster and more reliable).
 
 ---
 

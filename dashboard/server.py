@@ -54,12 +54,12 @@ from HRI_lab_Pepper.motion.leds import RobotLEDs
 from HRI_lab_Pepper.motion.animation_player import AnimationPlayer
 from HRI_lab_Pepper.interaction.awareness import BasicAwareness
 from HRI_lab_Pepper.interaction.touch import TouchSensor
+from HRI_lab_Pepper.tablet import (
+    deploy_tablet_pages,
+    TABLET_ROBOT_BASE as _TABLET_ROBOT_BASE,
+)
 
 _STATIC_DIR = Path(__file__).parent / "static"
-
-# Robot fixed internal IP seen by the tablet over the dedicated WiFi bridge.
-# Pages served from here load without crossing external WiFi → far more reliable.
-_TABLET_ROBOT_BASE = "http://198.18.0.1/apps/tablet"
 
 app = FastAPI(title="Pepper Student Dashboard")
 app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
@@ -173,12 +173,31 @@ async def _index():
 
 @app.get("/tablet/{page:path}")
 async def _tablet_page(page: str):
-    """Serve tablet HTML pages directly (e.g. /tablet/welcome.html)."""
-    target = (_STATIC_DIR / "tablet" / page).resolve()
-    # Safety: prevent path traversal
-    if not str(target).startswith(str((_STATIC_DIR / "tablet").resolve())):
+    """Serve tablet HTML pages directly (e.g. /tablet/welcome.html).
+
+    Prefers compiled files in tablet/dist/ (ES5, compatible with Pepper's old
+    Chromium browser) over the source files.  Falls back to source so the
+    dashboard still works during development before the build step is run.
+    """
+    if not page or page.strip("/") == "":
+        return JSONResponse(
+            {"error": "No page specified. Use /tablet/welcome.html, /tablet/menu.html, etc."},
+            status_code=400,
+        )
+    tablet_root = (_STATIC_DIR / "tablet").resolve()
+    src_target  = (_STATIC_DIR / "tablet" / page).resolve()
+    dist_target = (_STATIC_DIR / "tablet" / "dist" / page).resolve()
+
+    # Safety: prevent path traversal for both candidate paths
+    if not str(src_target).startswith(str(tablet_root)) or \
+       not str(dist_target).startswith(str(tablet_root)):
         return JSONResponse({"error": "invalid path"}, status_code=400)
-    if not target.exists():
+
+    # Prefer the compiled dist/ version when it exists
+    target = dist_target if (dist_target.exists() and not dist_target.is_dir()) \
+             else src_target
+
+    if not target.exists() or target.is_dir():
         return JSONResponse({"error": f"page '{page}' not found"}, status_code=404)
     return FileResponse(target)
 
@@ -244,14 +263,20 @@ async def _tablet_input(body: dict):
 
 
 @app.get("/api/tablet_input")
-async def _get_tablet_input():
+async def _get_tablet_input(consume: bool = False):
     """
     Return the most recent tablet input (or empty dict if none).
 
+    Pass ``?consume=true`` to pop the entry so the next call returns the next one.
     Students can poll this, or listen for ``tablet_input`` WebSocket events.
     """
     with _tablet_lock:
-        inp = dict(_tablet_inputs[-1]) if _tablet_inputs else {}
+        if not _tablet_inputs:
+            return JSONResponse({})
+        if consume:
+            inp = dict(_tablet_inputs.pop())
+        else:
+            inp = dict(_tablet_inputs[-1])
     return JSONResponse(inp)
 
 
@@ -354,156 +379,6 @@ def _touch_loop():
 
 
 # ═════════════════════════════════════════════════════════════════════════════
-#  Tablet page deployment (SFTP to robot's built-in web server)
-# ═════════════════════════════════════════════════════════════════════════════
-
-def _deploy_tablet_pages(robot_ip: str, dash_url: str) -> bool:
-    """
-    Copy tablet HTML pages to the robot at:
-        ~/.local/share/PackageManager/apps/tablet/html/
-
-    The robot's built-in web server then serves them at:
-        http://198.18.0.1/apps/tablet/<page>
-
-    The tablet loads those pages over the **internal** robot↔tablet WiFi bridge
-    (fixed IP 198.18.0.1), so the request never crosses external WiFi.
-    This is the primary fix for intermittent tablet display failures.
-
-    ``menu.html``'s callback URL is patched from the relative
-    ``/api/tablet_input`` to the absolute ``<dash_url>/api/tablet_input``
-    so it still reaches the laptop dashboard server across the LAN.
-
-    Returns True if deployment succeeded, False on any error.
-    """
-    try:
-        import paramiko  # noqa: PLC0415
-    except ImportError:
-        print("[TABLET] paramiko not installed — pages will be served from the laptop.")
-        print("[TABLET]   Install with:  pip install paramiko")
-        print("[TABLET]   Then re-run the dashboard to enable robot-side serving.")
-        return False
-
-    tablet_dir  = _STATIC_DIR / "tablet"
-    remote_base = ".local/share/PackageManager/apps/tablet/html"
-
-    # Pepper's SSH server accepts keyboard-interactive auth.
-    # We try three methods in order:
-    #   1. auth_interactive  (most correct for Pepper)
-    #   2. auth_password     (works on some firmware versions)
-    #   3. publickey via ~/.ssh/id_rsa or id_ed25519 (if the user has set it up)
-    transport = None
-    sftp      = None
-    try:
-        transport = paramiko.Transport((robot_ip, 22))
-        transport.connect()   # TCP + SSH handshake only (no auth yet)
-
-        def _ki_handler(title, instructions, prompt_list):
-            return ["nao" for _ in prompt_list]
-
-        authenticated = False
-
-        # ── Method 1: keyboard-interactive ──────────────────────────
-        try:
-            transport.auth_interactive("nao", _ki_handler)
-            authenticated = True
-        except paramiko.AuthenticationException:
-            pass
-
-        # ── Method 2: plain password ─────────────────────────────────
-        if not authenticated:
-            try:
-                transport.auth_password("nao", "robofun")
-                authenticated = True
-            except paramiko.AuthenticationException:
-                pass
-
-        # ── Method 3: public key ──────────────────────────────────────
-        if not authenticated:
-            import os, pathlib
-            for key_file in ("id_ed25519", "id_rsa", "id_ecdsa"):
-                key_path = pathlib.Path.home() / ".ssh" / key_file
-                if not key_path.exists():
-                    continue
-                try:
-                    if key_file.startswith("id_ed25519"):
-                        key = paramiko.Ed25519Key.from_private_key_file(str(key_path))
-                    elif key_file.startswith("id_ecdsa"):
-                        key = paramiko.ECDSAKey.from_private_key_file(str(key_path))
-                    else:
-                        key = paramiko.RSAKey.from_private_key_file(str(key_path))
-                    transport.auth_publickey("nao", key)
-                    authenticated = True
-                    break
-                except Exception:
-                    pass
-
-        if not authenticated:
-            raise paramiko.AuthenticationException("all auth methods failed")
-
-        print(f"[TABLET] SSH authenticated to {robot_ip}")
-        sftp = paramiko.SFTPClient.from_transport(transport)
-    except Exception as exc:
-        print(f"[TABLET] SSH connect failed ({exc}) — using laptop URLs (less reliable).")
-        if transport:
-            try:
-                transport.close()
-            except Exception:
-                pass
-        return False
-
-    try:
-        # Ensure remote directory exists
-        _sftp_makedirs(sftp, remote_base)
-
-        for f in sorted(tablet_dir.iterdir()):
-            if not f.is_file():
-                continue
-            data = f.read_bytes()
-            if f.name == "menu.html":
-                # Patch relative callback URL so it reaches the laptop server
-                data = data.replace(
-                    b"fetch('/api/tablet_input'",
-                    f"fetch('{dash_url}/api/tablet_input'".encode(),
-                )
-            sftp.putfo(io.BytesIO(data), f"{remote_base}/{f.name}")
-            print(f"[TABLET]   deployed {f.name}")
-
-        sftp.close()
-        transport.close()
-        print(f"[TABLET] All pages deployed → http://198.18.0.1/apps/tablet/")
-        return True
-
-    except Exception as exc:
-        print(f"[TABLET] SFTP deploy failed ({exc}) — using laptop URLs.")
-        try:
-            sftp.close()
-        except Exception:
-            pass
-        try:
-            transport.close()
-        except Exception:
-            pass
-        return False
-
-
-def _sftp_makedirs(sftp, remote_path: str) -> None:
-    """Recursively create directories on the SFTP server (like `mkdir -p`)."""
-    parts = remote_path.replace("\\", "/").split("/")
-    path  = ""
-    for part in parts:
-        if not part:
-            continue
-        path = f"{path}/{part}" if path else part
-        try:
-            sftp.stat(path)
-        except FileNotFoundError:
-            try:
-                sftp.mkdir(path)
-            except OSError:
-                pass  # concurrent creation or already exists
-
-
-# ═════════════════════════════════════════════════════════════════════════════
 #  Robot main loop
 # ═════════════════════════════════════════════════════════════════════════════
 
@@ -538,24 +413,40 @@ def robot_loop(args):
     anim_player  = AnimationPlayer(session)
     awareness    = BasicAwareness(session)
     touch        = TouchSensor(session)
-    from HRI_lab_Pepper.interaction.tablet import TabletService
+    from HRI_lab_Pepper.tablet import TabletService
     tablet_svc  = TabletService(session)
     _al_life    = session.service("ALAutonomousLife")
 
-    _al_motion  = session.service("ALMotion")
-    _al_battery = session.service("ALBattery")
-    _al_btemp   = session.service("ALBodyTemperature")
+    _al_motion    = session.service("ALMotion")
+    _al_battery   = session.service("ALBattery")
+    _al_btemp     = session.service("ALBodyTemperature")
+    _al_audio_dev = session.service("ALAudioDevice")
     print("[INIT] All modules ready.")
 
     # Deploy tablet pages to the robot so the tablet loads them from
     # 198.18.0.1 (internal bridge) instead of the laptop (external WiFi).
     global _tablet_deployed
-    _tablet_deployed = _deploy_tablet_pages(_robot_host, _dashboard_base_url)
+    _tablet_deployed = deploy_tablet_pages(
+        robot_ip=_robot_host,
+        dash_url=_dashboard_base_url,
+        src_dir=_STATIC_DIR / "tablet",
+    )
 
     PepperSession.disable_autonomous_life()
     posture.stand_init()
     awareness.start()
     cam.start()
+
+    # Pre-warm the tablet browser immediately so the first show_webview call
+    # during a demo hits an already-open browser rather than a cold start.
+    _welcome_url = (
+        f"{_TABLET_ROBOT_BASE}/welcome.html?title=Ready"
+        if _tablet_deployed
+        else f"{_dashboard_base_url}/tablet/welcome.html?title=Ready"
+    )
+    threading.Thread(
+        target=tablet_svc.show_webview, args=(_welcome_url,), daemon=True
+    ).start()
 
     stt_active   = False
     _status_tick = 0
@@ -641,6 +532,17 @@ def robot_loop(args):
                         except Exception:
                             pass
                     print(f"[CORE] Breathing → {'ON' if on else 'OFF'}")
+
+                elif ctype == "tts_volume":
+                    # ALAudioDevice master output volume (0-100); default on robot is ~50
+                    vol = max(0, min(100, int(cargs.get("value", 50))))
+                    _al_audio_dev.setOutputVolume(vol)
+                    print(f"[TTS] Output volume \u2192 {vol}%")
+
+                elif ctype == "tts_speed":
+                    speed = max(50, min(150, int(cargs.get("value", 100))))
+                    tts.set_speed(speed)
+                    print(f"[TTS] Speed → {speed}%")
 
                 elif ctype == "show_tablet":
                     page   = cargs.get("page", "")

@@ -9,6 +9,6 @@ Or import for programmatic use:
     run(url="tcp://172.18.48.50:9559", port=8080)
 """
 
-from dashboard.server import run, app, get_tablet_input
+from HRI_lab_Pepper.dashboard.server import run, app, get_tablet_input
 
 __all__ = ["run", "app", "get_tablet_input"]

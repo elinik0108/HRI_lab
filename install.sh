@@ -109,6 +109,26 @@ log "[4/5] Installing HRI_lab_Pepper package …"
 pip install -e "$REPO_ROOT" --quiet
 ok "Package installed."
 
+# ── [4b] Build tablet pages for Pepper's embedded browser ────────────────────
+TABLET_DIR="$REPO_ROOT/dashboard/static/tablet"
+log "[4b] Compiling tablet pages for Pepper's old Chromium browser …"
+
+if ! command -v node &>/dev/null; then
+    warn "Node.js not found — attempting automatic install via NodeSource …"
+    if command -v apt &>/dev/null; then
+        curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash - \
+            && sudo apt install -y nodejs
+    else
+        err "Node.js is required for the tablet build step. Install it from https://nodejs.org and re-run."
+    fi
+fi
+
+pushd "$TABLET_DIR" >/dev/null
+npm install --silent
+node build.js
+popd >/dev/null
+ok "Tablet pages compiled to $TABLET_DIR/dist/"
+
 # ── [5a/5] Download OpenVINO model from Google Drive (~45 MB) ─────────────────
 OV_MODEL_DIR="$REPO_ROOT/yolov8s_openvino_model"
 GDRIVE_FOLDER_ID="1aIGlLoDuyGId6dDP9E5JICDADGyDX-4G"

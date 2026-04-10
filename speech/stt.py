@@ -91,13 +91,25 @@ class SpeechToText:
         session: "qi.Session",
         timeout_sec: float = STT_TIMEOUT_SEC,
         mic_channel: int = STT_MIC_CHANNEL,
+        noise_reduce: bool = False,
+        use_multi_mic: bool = False,
     ) -> None:
-        from vosk import Model, KaldiRecognizer
+        self._session       = session
+        self._timeout       = timeout_sec
+        self._mic_ch        = mic_channel
+        self._use_multi_mic = use_multi_mic
+        self._subscribed    = False
 
-        self._session    = session
-        self._timeout    = timeout_sec
-        self._mic_ch     = mic_channel
-        self._subscribed = False
+        self._nr = None
+        if noise_reduce:
+            try:
+                import noisereduce as nr
+                self._nr = nr
+            except ImportError as e:
+                raise ImportError(
+                    "noise_reduce=True requires: pip install noisereduce"
+                ) from e
+        self._noise_reduce = noise_reduce
 
         self.audio = session.service("ALAudioDevice")
         try:
@@ -105,20 +117,33 @@ class SpeechToText:
         except Exception:
             pass
 
+        from vosk import Model, KaldiRecognizer
         model_path = _ensure_vosk_model()
-        print(f"{B}[STT] Loading Vosk engine ({VOSK_MODEL_NAME}) …{W}")
+        print(f"{B}[STT] Loading Vosk model ({VOSK_MODEL_NAME}) …{W}")
         self._model = Model(model_path)
         self._rec   = KaldiRecognizer(self._model, STT_SAMPLE_RATE)
-
-        self._lock        = threading.Lock()
-        self._is_listening = False
         self._last_partial = ""
-        self._deadline    = 0.0
-        self._result_text = ""
-        self._done_event  = threading.Event()
+
+        self._lock         = threading.Lock()
+        self._is_listening = False
+        self._deadline     = 0.0
+        self._result_text  = ""
+        self._done_event   = threading.Event()
 
         from HRI_lab_Pepper.session import PepperSession
         PepperSession.register_cleanup(self.unsubscribe)
+
+    # ------------------------------------------------------------------
+    # Audio pre-processing
+    # ------------------------------------------------------------------
+
+    def _apply_noise_reduction(self, samples: np.ndarray) -> np.ndarray:
+        """Spectral noise gating — stationary mode is ideal for constant motor/fan noise."""
+        f32      = samples.astype(np.float32) / 32768.0
+        denoised = self._nr.reduce_noise(
+            y=f32, sr=STT_SAMPLE_RATE, stationary=True, prop_decrease=0.75
+        )
+        return (denoised * 32768.0).clip(-32768, 32767).astype(np.int16)
 
     # ------------------------------------------------------------------
     # Naoqi audio callback
@@ -131,15 +156,22 @@ class SpeechToText:
 
         samples = np.frombuffer(bytes(bytearray(inputBuffer)), dtype=np.int16)
 
-        # Basic Voice Activity Detection via RMS energy
-        rms = float(np.sqrt(np.mean(samples.astype(np.float32) ** 2)))
+        # Multi-mic beamforming: average all received channels (~√N noise reduction for diffuse noise)
+        if nbChannels > 1:
+            samples = samples.reshape(nbrSamplesByChannel, nbChannels).mean(axis=1).astype(np.int16)
+
+        # Per-chunk spectral noise reduction (Vosk streaming path only)
+        if self._noise_reduce and self._backend == "vosk":
+            samples = self._apply_noise_reduction(samples)
+
+        rms       = float(np.sqrt(np.mean(samples.astype(np.float32) ** 2)))
         timed_out = time.time() > self._deadline
 
         if rms < STT_VAD_RMS_MIN and not timed_out:
             return
 
         with self._lock:
-            pcm = samples.tobytes()
+            pcm       = samples.tobytes()
             timed_out = time.time() > self._deadline  # re-check under lock
 
             if self._rec.AcceptWaveform(pcm):
@@ -150,7 +182,6 @@ class SpeechToText:
                     self._finish(text)
                     return
 
-            # partials
             partial = json.loads(self._rec.PartialResult()).get("partial", "").strip()
             if partial and partial != self._last_partial:
                 print(f"\r{B}[STT] >> {W}{partial}    ", end="", flush=True)
@@ -180,12 +211,13 @@ class SpeechToText:
         if self._subscribed:
             return
         self._session.registerService(_MODULE_NAME, self)
-        self.audio.setClientPreferences(
-            _MODULE_NAME, STT_SAMPLE_RATE, self._mic_ch, 0
-        )
+        # NAOqi channel: 0 = all 4 mics; 1=Left, 2=Right, 3=Front, 4=Rear
+        ch = 0 if self._use_multi_mic else self._mic_ch
+        self.audio.setClientPreferences(_MODULE_NAME, STT_SAMPLE_RATE, ch, 0)
         self.audio.subscribe(_MODULE_NAME)
         self._subscribed = True
-        print(f"{B}[STT] Subscribed to ALAudioDevice (ch {self._mic_ch}){W}")
+        ch_label = "all mics (beamform)" if self._use_multi_mic else f"ch {self._mic_ch}"
+        print(f"{B}[STT] Subscribed to ALAudioDevice ({ch_label}){W}")
 
     def unsubscribe(self) -> None:
         """Unsubscribe from audio device."""

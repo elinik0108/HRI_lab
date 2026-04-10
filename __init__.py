@@ -8,7 +8,7 @@ from HRI_lab_Pepper.motion.movement import RobotMovement
 from HRI_lab_Pepper.motion.posture import RobotPosture
 from HRI_lab_Pepper.motion.tracker import RobotTracker
 from HRI_lab_Pepper.motion.leds import RobotLEDs
-from HRI_lab_Pepper.interaction.tablet import TabletService
+from HRI_lab_Pepper.tablet import TabletService
 from HRI_lab_Pepper.interaction.awareness import BasicAwareness
 from HRI_lab_Pepper.interaction.touch import TouchSensor, TouchZone
 from HRI_lab_Pepper.database import DialogDB

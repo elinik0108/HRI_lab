@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # =============================================================================
-#                    HRI_lab_Pepper — Tablet Interaction Module
+#                    HRI_lab_Pepper — Tablet service
 # =============================================================================
 """
 Controls Pepper's chest tablet via Naoqi ``ALTabletService``.
@@ -11,7 +11,7 @@ Note: ``ALTabletService`` is marked deprecated in Naoqi 2.8 but remains
 Usage
 -----
     from HRI_lab_Pepper.session import PepperSession
-    from HRI_lab_Pepper.interaction.tablet import TabletService
+    from HRI_lab_Pepper.tablet import TabletService
 
     session = PepperSession.connect("tcp://ROBOT_IP:9559")
     tablet = TabletService(session)
@@ -43,6 +43,7 @@ class TabletService:
             self._tablet.enableWifi()
         except Exception:
             pass
+        self._direct_mode = False   # set True once loadUrl proves unreliable
         print(f"{B}[Tablet] Ready.{W}")
 
     # ------------------------------------------------------------------
@@ -64,24 +65,10 @@ class TabletService:
         """
         Open a URL in the tablet's web view.
 
-        Uses the two-step ``loadUrl`` + ``showWebview()`` approach which is more
-        reliable over flaky WiFi than the single ``showWebview(url)`` call —
-        ``loadUrl`` pre-fetches the page and returns a bool so we can detect
-        failures and retry automatically.
-
-        Parameters
-        ----------
-        url : str
-            Full HTTP(S) URL.
-        retries : int
-            Number of attempts (default: 3).
-        retry_delay : float
-            Seconds to wait between attempts (default: 0.6).
-
-        Returns
-        -------
-        bool
-            True if at least one attempt succeeded.
+        Tries the two-step ``loadUrl`` + ``showWebview()`` approach first.
+        If ``loadUrl`` returns False on all attempts (common on some firmware
+        versions), it permanently switches to direct ``showWebview(url)`` mode
+        for the rest of the session to avoid the retry delay on every call.
         """
         try:
             self._tablet.wakeUp()
@@ -89,29 +76,35 @@ class TabletService:
         except Exception:
             pass
 
-        for attempt in range(1, retries + 1):
-            try:
-                self._tablet.cleanWebview()   # reset browser state before loading
-                ok = self._tablet.loadUrl(url)
-                if ok:
-                    time.sleep(0.3)            # let the browser start rendering
-                    self._tablet.showWebview()
-                    print(f"{B}[Tablet] Page loaded (attempt {attempt}): {url}{W}")
-                    return True
-                else:
-                    print(f"[Tablet] loadUrl returned False on attempt {attempt}, retrying …")
-            except Exception as exc:
-                print(f"[Tablet] Attempt {attempt} error: {exc}")
-            if attempt < retries:
-                time.sleep(retry_delay)
+        if not self._direct_mode:
+            for attempt in range(1, retries + 1):
+                try:
+                    self._tablet.cleanWebview()
+                    ok = self._tablet.loadUrl(url)
+                    if ok:
+                        time.sleep(0.3)
+                        self._tablet.showWebview()
+                        print(f"{B}[Tablet] Page loaded (attempt {attempt}): {url}{W}")
+                        return True
+                    else:
+                        print(f"[Tablet] loadUrl returned False on attempt {attempt}, retrying …")
+                except Exception as exc:
+                    print(f"[Tablet] Attempt {attempt} error: {exc}")
+                if attempt < retries:
+                    time.sleep(retry_delay)
 
-        # Last-resort fallback: single-call showWebview in case loadUrl is broken
-        print(f"[Tablet] {R}All loadUrl attempts failed — falling back to showWebview(url){W}")
+            # loadUrl consistently fails on this firmware — switch to direct mode
+            # permanently so future calls skip the retry loop entirely.
+            print(f"[Tablet] loadUrl unreliable — switching to direct showWebview(url) mode.")
+            self._direct_mode = True
+
+        # Direct mode: single showWebview(url) call
         try:
             self._tablet.showWebview(url)
+            print(f"{B}[Tablet] showWebview (direct): {url}{W}")
             return True
         except Exception as exc:
-            print(f"[Tablet] {R}Fallback also failed: {exc}{W}")
+            print(f"[Tablet] {R}showWebview failed: {exc}{W}")
             return False
 
     def show_video(self, url: str) -> None:

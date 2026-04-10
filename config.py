@@ -29,18 +29,18 @@ MODELS_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".", "mod
 VOSK_MODEL_NAME = "vosk-model-small-en-us-0.15"
 VOSK_MODEL_URL  = f"https://alphacephei.com/vosk/models/{VOSK_MODEL_NAME}.zip"
 
-# ── DL Models — OpenVINO (no PyTorch / cuDNN required) ───────────────────────
-# YOLOv8s exported to OpenVINO IR format by the install script.
+# ── DL Models ─────────────────────────────────────────────────────────────────
+# YOLOv8s exported to OpenVINO IR format (CPU/Intel-GPU path)
 # The model directory contains yolov8s.xml + yolov8s.bin
 _REPO_ROOT        = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 YOLO_DETECT_MODEL = os.path.join(_REPO_ROOT, "HRI_lab_Pepper/yolov8s_openvino_model", "yolov8s.xml")
+# Original PyTorch weights used by the ultralytics/CUDA path
+YOLO_PT_MODEL     = os.path.join(_REPO_ROOT, "HRI_lab_Pepper/models", "yolov8s.pt")
 
-# OpenVINO device — override with PEPPER_API_DEVICE env var (CPU / GPU)
-def _ov_device() -> str:
-    override = os.environ.get("PEPPER_API_DEVICE", "").strip().upper()
-    return override if override in ("CPU", "GPU", "AUTO") else "CPU"
-
-INFERENCE_DEVICE = _ov_device()
+# Inference device — auto-detected at import time.
+# Override with PEPPER_API_DEVICE env var: CPU / GPU / CUDA / AUTO
+from HRI_lab_Pepper.utils.device import select_device as _select_device  # noqa: E402
+INFERENCE_DEVICE = _select_device()
 
 # ── Terminal colours ──────────────────────────────────────────────────────────
 W    = "\033[0m"
