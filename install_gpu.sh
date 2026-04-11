@@ -16,16 +16,16 @@
 #  Approximate download sizes
 #  --------------------------
 #    onnxruntime-gpu            ~180 MB
-#    ultralytics (ONNX export)   ~80 MB  (PyTorch wheels)
-#    cuDNN 9 (if missing)       ~500 MB
+#    yolov8s.onnx (gdrive)        ~30 MB
 #    qi (Naoqi SDK)              ~20 MB
 #    opencv-python-headless      ~25 MB
 #    vosk + model                ~5 MB + 50 MB
 #    fastapi + uvicorn            ~5 MB
+#    gdown                        ~1 MB
 #    numpy, psutil               ~25 MB
 #  --------------------------
-#  Total (cuDNN present):   ~350 MB
-#  Total (first run):       ~850 MB
+#  Total (cuDNN present):   ~340 MB
+#  Total (first run):       ~840 MB
 # =============================================================================
 set -euo pipefail
 
@@ -142,6 +142,7 @@ pip install \
     "uvicorn[standard]>=0.29" \
     "psutil>=5.9" \
     "paramiko>=3.0" \
+    "gdown>=5.1" \
     --quiet
 ok "Dashboard dependencies installed."
 
@@ -150,32 +151,26 @@ log "[4/5] Installing HRI_lab_Pepper package …"
 pip install -e "$REPO_ROOT" --quiet
 ok "Package installed."
 
-# ── [5/5] Export YOLOv8s → ONNX ──────────────────────────────────────────────
-PT_MODEL="$REPO_ROOT/models/yolov8s.pt"
+# ── [5/5] Download YOLOv8s ONNX model ───────────────────────────────────────
 ONNX_MODEL="$REPO_ROOT/models/yolov8s.onnx"
+ONNX_GDRIVE_ID="1ni4JDZ3LY2aDW23snswUfJBKx8RedEKn"
 
 log "[5/5] Checking yolov8s ONNX model …"
 if [ -f "$ONNX_MODEL" ]; then
-    ok "yolov8s.onnx already exists — skipping export."
-elif [ ! -f "$PT_MODEL" ]; then
-    warn "models/yolov8s.pt not found — skipping ONNX export."
-    warn "Place yolov8s.pt in $REPO_ROOT/models/ and re-run, or export manually:"
-    warn "  python -c \"from ultralytics import YOLO; YOLO('models/yolov8s.pt').export(format='onnx')\""
+    ok "yolov8s.onnx already exists — skipping download."
 else
-    log "Installing ultralytics for ONNX export …"
-    pip install "ultralytics>=8.0" --quiet
-    log "Exporting $PT_MODEL → yolov8s.onnx …"
+    mkdir -p "$REPO_ROOT/models"
+    log "Downloading yolov8s.onnx from Google Drive …"
     python - <<PYEOF
-from ultralytics import YOLO
-import os, shutil
-model = YOLO("$PT_MODEL")
-model.export(format="onnx", imgsz=640, dynamic=False, simplify=True)
-src = "$PT_MODEL".replace(".pt", ".onnx")
-if src != "$ONNX_MODEL" and os.path.exists(src):
-    shutil.move(src, "$ONNX_MODEL")
-print("Export complete:", "$ONNX_MODEL")
+import sys
+try:
+    import gdown
+except ImportError:
+    print("gdown not found", file=sys.stderr)
+    sys.exit(1)
+gdown.download(id="$ONNX_GDRIVE_ID", output="$ONNX_MODEL", quiet=False, fuzzy=True)
 PYEOF
-    ok "yolov8s.onnx exported."
+    ok "yolov8s.onnx downloaded."
 fi
 
 # ── Download Vosk speech model ────────────────────────────────────────────────
