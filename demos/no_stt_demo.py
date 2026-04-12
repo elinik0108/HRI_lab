@@ -39,7 +39,6 @@ from pathlib import Path
 try:
     from HRI_lab_Pepper.session import PepperSession
     from HRI_lab_Pepper.speech.tts import TextToSpeech
-    from HRI_lab_Pepper.speech.stt import SpeechToText
     from HRI_lab_Pepper.vision.camera import PepperCamera
     from HRI_lab_Pepper.vision.human_detection import HumanDetector
     from HRI_lab_Pepper.tablet import TabletService, deploy_tablet_pages, TABLET_ROBOT_BASE as _TABLET_ROBOT_BASE
@@ -61,19 +60,12 @@ _TABLET_SRC_DIR = Path(__file__).resolve().parent.parent / "dashboard" / "static
 
 GREETINGS = [
     "Hi there! I'm Pepper, your personal assistant robot. So glad to see you!",
-    "Hello! I spotted you — I'm Pepper. Let me help you today!",
+    "Hello! I spotted you - I'm Pepper. Let me help you today!",
     "Great, a visitor! I am Pepper. Welcome!",
 ]
 
-READY_QUESTION = (
-    "Are you ready to interact with me? "
-    "Say yes whenever you are!"
-)
-
-CONFIRM_KEYWORDS = ("yes", "yeah", "yep", "sure", "ready", "ok", "okay", "go")
-
 MENU_INTRO = (
-    "Perfect! I have a few things I can do for you. "
+    "I have a few things I can do for you. "
     "Please pick one on my tablet!"
 )
 
@@ -211,23 +203,6 @@ def _wait_for_person(
     return False
 
 
-def _wait_for_confirmation(
-    stt: "SpeechToText",
-    keywords: tuple = CONFIRM_KEYWORDS,
-) -> bool:
-    """
-    Listen for a yes-like utterance.
-    Returns True if a matching keyword was heard.
-    """
-    _log(f"Listening for confirmation (keywords: {keywords}) …")
-    transcript = stt.listen()
-    if not transcript:
-        _log("No speech heard.")
-        return False
-    _log(f"Heard: '{transcript}'")
-    return any(kw in transcript.lower() for kw in keywords)
-
-
 def _wait_for_menu_choice(timeout: float = 30.0) -> dict:
     """
     Block until the broker receives a card_choice POST from the tablet,
@@ -267,11 +242,6 @@ def _build_tablet_url(base_url: str, page: str, params: str, on_robot: bool = Fa
 class _FakeTTS:
     def speak(self, text, animated=True): _log(f"[TTS] {text}")
     def set_volume(self, v): pass
-
-class _FakeSTT:
-    def register_and_subscribe(self): pass
-    def listen(self): time.sleep(1); return "yes"
-    def unsubscribe(self): pass
 
 class _FakeCamera:
     def get_frame(self):
@@ -322,7 +292,6 @@ class _FakeAwareness:
 
 def run_scenario(
     tts: object,
-    stt: object,
     camera: object,
     detector: object,
     tablet: object,
@@ -338,13 +307,8 @@ def run_scenario(
     # ── 0. Setup ────────────────────────────────────────────────────────
     _log("Setting up robot…")
     posture.stand()
-    # awareness.start()
     camera.start()
     time.sleep(1.0)
-
-    # setup the speech volume and speed
-    tts.set_volume(75)
-    tts.set_speed(100)
 
     # ── 1. Wait for a person ────────────────────────────────────────────
     found = _wait_for_person(camera, detector, timeout=120.0)
@@ -363,23 +327,7 @@ def run_scenario(
     tts.speak(greeting, animated=True)
     time.sleep(0.5)
 
-    # ── 3. Ask for confirmation via STT ─────────────────────────────────
-    # Show listening page on tablet
-    tablet.show_webview(_build_tablet_url(dashboard_url, "listening.html", "prompt=Listening...", on_robot))
-    _led(leds, "thinking")
-
-    tts.speak(READY_QUESTION, animated=True)
-
-    stt.register_and_subscribe()
-    confirmed = _wait_for_confirmation(stt)
-    stt.unsubscribe()
-
-    if not confirmed:
-        tts.speak(
-            "I didn't quite catch that. Let me show you the menu anyway!", animated=True
-        )
-
-    # ── 4. Show image-card menu ───────────────────────────────────────────
+    # ── 3. Show image-card menu ───────────────────────────────────────────
     _led(leds, "happy")
     tts.speak(MENU_INTRO, animated=True)
 
@@ -391,7 +339,7 @@ def run_scenario(
     )
     tablet.show_webview(menu_url)
 
-    # ── 5. Wait for choice and react ────────────────────────────────────
+    # ── 4. Wait for choice and react ────────────────────────────────────
     choice_event = _wait_for_menu_choice(timeout=60.0)
 
     if not choice_event:
@@ -461,7 +409,6 @@ def main() -> None:
         on_robot  = False
         _start_tablet_broker(args.port)
         tts       = _FakeTTS()
-        stt       = _FakeSTT()
         camera    = _FakeCamera()
         detector  = _FakeDetector()
         tablet    = _FakeTablet(dashboard_url)
@@ -474,7 +421,6 @@ def main() -> None:
         session   = PepperSession.connect(args.url)
         PepperSession.disable_autonomous_life()
         tts       = TextToSpeech(session)
-        stt       = SpeechToText(session)
         camera    = PepperCamera(session)
         detector  = HumanDetector()
         tablet    = TabletService(session)
@@ -510,7 +456,6 @@ def main() -> None:
     try:
         run_scenario(
             tts=tts,
-            stt=stt,
             camera=camera,
             detector=detector,
             tablet=tablet,
@@ -527,13 +472,11 @@ def main() -> None:
         if not args.dry_run:
             _log("Cleaning up …")
             for fn, label in [
-                (stt.unsubscribe,          "STT unsubscribe"),
                 (camera.stop,              "camera stop"),
                 (awareness.stop,           "awareness stop"),
                 (leds.off,                 "LEDs off"),
                 (tablet.hide,              "tablet hide"),
                 (lambda: posture.stand(speed=0.5), "posture stand"),
-                # (PepperSession.enable_autonomous_life, "autonomous life restore"),
                 (PepperSession.disconnect, "session disconnect"),
             ]:
                 try:
