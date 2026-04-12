@@ -335,9 +335,13 @@ def run_scenario(
     # ── 0. Setup ────────────────────────────────────────────────────────
     _log("Setting up robot…")
     posture.stand()
-    awareness.start()
+    # awareness.start()
     camera.start()
     time.sleep(1.0)
+
+    # setup the speech volume and speed
+    tts.set_volume(75)
+    tts.set_speed(100)
 
     # ── 1. Wait for a person ────────────────────────────────────────────
     found = _wait_for_person(camera, detector, timeout=120.0)
@@ -525,7 +529,7 @@ def main() -> None:
                 (leds.off,                 "LEDs off"),
                 (tablet.hide,              "tablet hide"),
                 (lambda: posture.stand(speed=0.5), "posture stand"),
-                (PepperSession.enable_autonomous_life, "autonomous life restore"),
+                # (PepperSession.enable_autonomous_life, "autonomous life restore"),
                 (PepperSession.disconnect, "session disconnect"),
             ]:
                 try:

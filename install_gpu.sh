@@ -32,7 +32,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$SCRIPT_DIR"
 
-VENV_DIR="$REPO_ROOT/.venv"
+VENV_DIR="$REPO_ROOT/.venv_gpu"
 PYTHON=${PYTHON:-python3}
 
 # ── Colours ───────────────────────────────────────────────────────────────────
@@ -168,7 +168,7 @@ try:
 except ImportError:
     print("gdown not found", file=sys.stderr)
     sys.exit(1)
-gdown.download(id="$ONNX_GDRIVE_ID", output="$ONNX_MODEL", quiet=False, fuzzy=True)
+gdown.download(id="$ONNX_GDRIVE_ID", output="$ONNX_MODEL", quiet=False)
 PYEOF
     ok "yolov8s.onnx downloaded."
 fi

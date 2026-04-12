@@ -39,8 +39,8 @@ class TextToSpeech:
         Active Naoqi session.
     language : str
         Initial language for ALTextToSpeech (e.g. ``"English"``, ``"French"``).
-    volume : float
-        Initial volume 0.0–1.0.
+    volume : int
+        Initial master output volume 0–100.
     speed : int
         Initial speech speed as a percentage of normal (100 = normal).
     """
@@ -49,11 +49,12 @@ class TextToSpeech:
         self,
         session: "qi.Session",
         language: str = "English",
-        volume: float = 0.8,
+        volume: int = 50,
         speed: int = 100,
     ) -> None:
-        self._tts  = session.service("ALTextToSpeech")
-        self._anim = session.service("ALAnimatedSpeech")
+        self._tts   = session.service("ALTextToSpeech")
+        self._anim  = session.service("ALAnimatedSpeech")
+        self._audio = session.service("ALAudioDevice")
 
         self.set_language(language)
         self.set_volume(volume)
@@ -116,14 +117,14 @@ class TextToSpeech:
         """Return a list of installed language strings."""
         return self._tts.getAvailableLanguages()
 
-    def set_volume(self, volume: float) -> None:
-        """Set volume in the range [0.0, 1.0]."""
-        volume = max(0.0, min(1.0, float(volume)))
-        self._tts.setVolume(volume)
+    def set_volume(self, volume: int) -> None:
+        """Set master output volume in the range [0, 100]."""
+        volume = max(0, min(100, int(volume)))
+        self._audio.setOutputVolume(volume)
 
-    def get_volume(self) -> float:
-        """Return current volume."""
-        return self._tts.getVolume()
+    def get_volume(self) -> int:
+        """Return current master output volume (0–100)."""
+        return self._audio.getOutputVolume()
 
     def set_speed(self, speed: int) -> None:
         """

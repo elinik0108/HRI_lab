@@ -11,11 +11,17 @@ requires-python = ">=3.9"
 dependencies = []
 
 [tool.setuptools]
-# The Python package HRI_lab_Pepper/ lives in the parent directory
-# (the directory that contains this repo).  Editable installs will add
-# that parent dir to sys.path so `import HRI_lab_Pepper` resolves correctly.
-package-dir = {"" = ".."}
-
-[tool.setuptools.packages.find]
-where = [".."]
-include = ["HRI_lab_Pepper*"]
+# Map the HRI_lab_Pepper package to the repo root so the install works
+# regardless of what the containing folder is named (e.g. after a zip download).
+package-dir = {"HRI_lab_Pepper" = "."}
+packages = [
+  "HRI_lab_Pepper",
+  "HRI_lab_Pepper.dashboard",
+  "HRI_lab_Pepper.database",
+  "HRI_lab_Pepper.interaction",
+  "HRI_lab_Pepper.motion",
+  "HRI_lab_Pepper.speech",
+  "HRI_lab_Pepper.tablet",
+  "HRI_lab_Pepper.utils",
+  "HRI_lab_Pepper.vision",
+]

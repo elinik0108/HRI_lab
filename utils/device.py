@@ -51,7 +51,16 @@ def select_device() -> str:
     except ImportError:
         pass
 
-    # ── 3. Intel GPU via OpenVINO plugin ─────────────────────────────────────
+    # ── 3. NVIDIA GPU via ONNX Runtime (onnxruntime-gpu, no torch needed) ──────
+    try:
+        import onnxruntime as _ort
+
+        if "CUDAExecutionProvider" in _ort.get_available_providers():
+            return "ort_gpu"
+    except ImportError:
+        pass
+
+    # ── 4. Intel GPU via OpenVINO plugin ─────────────────────────────────────
     try:
         import openvino as ov
 
@@ -60,5 +69,5 @@ def select_device() -> str:
     except Exception:
         pass
 
-    # ── 4. Safe CPU fallback ──────────────────────────────────────────────────
+    # ── 5. Safe CPU fallback ──────────────────────────────────────────────────
     return "CPU"

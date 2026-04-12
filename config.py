@@ -36,6 +36,8 @@ _REPO_ROOT        = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 YOLO_DETECT_MODEL = os.path.join(_REPO_ROOT, "HRI_lab_Pepper/yolov8s_openvino_model", "yolov8s.xml")
 # Original PyTorch weights used by the ultralytics/CUDA path
 YOLO_PT_MODEL     = os.path.join(_REPO_ROOT, "HRI_lab_Pepper/models", "yolov8s.pt")
+# ONNX model used by the onnxruntime-gpu path (GPU install)
+YOLO_ONNX_MODEL   = os.path.join(_REPO_ROOT, "HRI_lab_Pepper/models", "yolov8s.onnx")
 
 # Inference device — auto-detected at import time.
 # Override with PEPPER_API_DEVICE env var: CPU / GPU / CUDA / AUTO
