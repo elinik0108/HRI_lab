@@ -117,7 +117,15 @@ pip install "onnxruntime-gpu" --quiet
 ok "onnxruntime-gpu installed."
 
 log "       Installing Naoqi (qi) SDK …"
-if   [ "$PY_MAJOR" -eq 3 ] && [ "$PY_MINOR" -eq 12 ]; then
+elif   [ "$PY_MAJOR" -eq 3 ] && [ "$PY_MINOR" -eq 8 ]; then
+    pip install https://github.com/aldebaran/libqi-python/releases/download/qi-python-v3.1.5/qi-3.1.5-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl --quiet
+elif   [ "$PY_MAJOR" -eq 3 ] && [ "$PY_MINOR" -eq 9 ]; then
+    pip install https://github.com/aldebaran/libqi-python/releases/download/qi-python-v3.1.5/qi-3.1.5-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl --quiet
+elif   [ "$PY_MAJOR" -eq 3 ] && [ "$PY_MINOR" -eq 10 ]; then
+    pip install https://github.com/aldebaran/libqi-python/releases/download/qi-python-v3.1.5/qi-3.1.5-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl --quiet
+elif   [ "$PY_MAJOR" -eq 3 ] && [ "$PY_MINOR" -eq 11 ]; then
+    pip install https://github.com/aldebaran/libqi-python/releases/download/qi-python-v3.1.5/qi-3.1.5-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl --quiet
+elif   [ "$PY_MAJOR" -eq 3 ] && [ "$PY_MINOR" -eq 12 ]; then
     pip install https://github.com/Maelic/libqi-python/releases/download/qi-python-v3.1.5-cp312-cp313/qi-3.1.5-cp312-cp312-manylinux_2_28_x86_64.whl --quiet
 elif [ "$PY_MAJOR" -eq 3 ] && [ "$PY_MINOR" -eq 13 ]; then
     pip install https://github.com/Maelic/libqi-python/releases/download/qi-python-v3.1.5-cp312-cp313/qi-3.1.5-cp313-cp313-manylinux_2_28_x86_64.whl --quiet
