@@ -129,6 +129,7 @@ class SpeechToText:
         self._deadline     = 0.0
         self._result_text  = ""
         self._done_event   = threading.Event()
+        self._service_id   = None   # set by registerService, cleared on unregister
 
         from HRI_lab_Pepper.session import PepperSession
         PepperSession.register_cleanup(self.unsubscribe)
@@ -206,27 +207,61 @@ class SpeechToText:
     # Public API
     # ------------------------------------------------------------------
 
-    def register_and_subscribe(self) -> None:
-        """Register this service with Naoqi and subscribe to audio device."""
+    def register_and_subscribe(self, retries: int = 6, retry_delay: float = 0.5) -> None:
+        """Register this service with Naoqi and subscribe to audio device.
+
+        After ``registerService`` the robot needs to open a connection back to
+        this process to verify the service.  Over Wi-Fi that round-trip can
+        take several hundred milliseconds, so we retry ``setClientPreferences``
+        instead of relying on a fixed sleep.
+        """
         if self._subscribed:
             return
-        self._session.registerService(_MODULE_NAME, self)
+        if self._service_id is None:
+            print(f"{B}[STT] Registering service '{_MODULE_NAME}' …{W}")
+            self._service_id = self._session.registerService(_MODULE_NAME, self)
+            print(f"{B}[STT] Service registered (id={self._service_id}){W}")
         # NAOqi channel: 0 = all 4 mics; 1=Left, 2=Right, 3=Front, 4=Rear
         ch = 0 if self._use_multi_mic else self._mic_ch
-        self.audio.setClientPreferences(_MODULE_NAME, STT_SAMPLE_RATE, ch, 0)
+        last_exc: Exception = RuntimeError("No attempts made")
+        for attempt in range(1, retries + 1):
+            try:
+                print(f"{B}[STT] setClientPreferences attempt {attempt}/{retries} …{W}")
+                self.audio.setClientPreferences(_MODULE_NAME, STT_SAMPLE_RATE, ch, 0)
+                break
+            except Exception as exc:
+                last_exc = exc
+                print(f"{B}[STT] Not reachable yet (attempt {attempt}/{retries}): {exc}{W}")
+                time.sleep(retry_delay)
+        else:
+            raise RuntimeError(
+                f"[STT] ALAudioDevice could not reach '{_MODULE_NAME}' after "
+                f"{retries} attempts — check network connectivity."
+            ) from last_exc
         self.audio.subscribe(_MODULE_NAME)
         self._subscribed = True
         ch_label = "all mics (beamform)" if self._use_multi_mic else f"ch {self._mic_ch}"
         print(f"{B}[STT] Subscribed to ALAudioDevice ({ch_label}){W}")
+        print(f"{B}[STT] Ready.{W}")
 
     def unsubscribe(self) -> None:
-        """Unsubscribe from audio device."""
+        """Unsubscribe from audio device and unregister the NAOqi service."""
         if not self._subscribed:
             return
+        # Wake any blocking listen() immediately — the audio stream is going away
+        # so processRemote will never fire to set _done_event naturally.
+        self._is_listening = False
+        self._done_event.set()
         try:
             self.audio.unsubscribe(_MODULE_NAME)
         except Exception:
             pass
+        if self._service_id is not None:
+            try:
+                self._session.unregisterService(self._service_id)
+            except Exception:
+                pass
+            self._service_id = None
         self._subscribed = False
 
     def listen(self) -> str:

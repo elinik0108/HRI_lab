@@ -27,7 +27,6 @@ Usage
 """
 
 import argparse
-import http.server
 import queue
 import time
 import sys
@@ -131,58 +130,11 @@ def _log(msg: str) -> None:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-#  Embedded tablet input broker
+#  Tablet input queue
 # ──────────────────────────────────────────────────────────────────────────────
 
-# Single-item queue: tablet page POSTs here; _wait_for_menu_choice blocks on it.
+# Single-item queue: ALMemory subscriber puts here; _wait_for_menu_choice reads.
 _choice_queue: queue.Queue = queue.Queue()
-
-
-class _TabletBrokerHandler(http.server.BaseHTTPRequestHandler):
-    """Handles tablet callbacks — CORS preflight + POST /api/tablet_input."""
-
-    def _cors(self):
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
-
-    def do_OPTIONS(self):          # CORS preflight from the tablet browser
-        self.send_response(204)
-        self._cors()
-        self.end_headers()
-
-    def do_POST(self):
-        if not self.path.startswith("/api/tablet_input"):
-            self.send_error(404)
-            return
-        try:
-            n = int(self.headers.get("Content-Length", 0))
-            body = _json.loads(self.rfile.read(n))
-        except Exception:
-            self.send_error(400)
-            return
-        _choice_queue.put(body)
-        self.send_response(200)
-        self._cors()
-        self.send_header("Content-Type", "application/json")
-        self.end_headers()
-        self.wfile.write(b'{"ok":true}')
-
-    def log_message(self, *args):
-        pass  # suppress access log noise
-
-
-def _start_tablet_broker(port: int) -> bool:
-    """Start the broker in a daemon thread. Returns False if port is in use."""
-    try:
-        srv = http.server.HTTPServer(("", port), _TabletBrokerHandler)
-    except OSError:
-        _log(f"Port {port} already in use — tablet broker not started.")
-        _log("  Is the dashboard already running? Use --port to pick a free port.")
-        return False
-    threading.Thread(target=srv.serve_forever, daemon=True, name="tablet-broker").start()
-    _log(f"Tablet broker listening on :{port}")
-    return True
 
 
 def _wait_for_person(
@@ -459,7 +411,6 @@ def main() -> None:
         _log("=== DRY-RUN MODE (no robot) ===")
         dashboard_url = f"http://localhost:{args.port}"
         on_robot  = False
-        _start_tablet_broker(args.port)
         tts       = _FakeTTS()
         stt       = _FakeSTT()
         camera    = _FakeCamera()
@@ -483,25 +434,36 @@ def main() -> None:
         leds      = RobotLEDs(session)
         awareness = BasicAwareness(session)
 
-        # Derive dashboard URL from local IP (must match what install script uses)
-        import socket
-        try:
-            local_ip = socket.gethostbyname(socket.gethostname())
-        except Exception:
-            local_ip = "localhost"
-        dashboard_url = f"http://{local_ip}:{args.port}"
-        _log(f"Dashboard URL for tablet: {dashboard_url}")
-
-        # Extract robot IP from the naoqi URL (e.g. tcp://172.18.48.50:9559)
+        # Derive dashboard URL reachable by the robot's tablet browser.
         _robot_host = args.url.split("://")[-1].split(":")[0]
+        import socket as _socket
+        try:
+            _s = _socket.socket(_socket.AF_INET, _socket.SOCK_DGRAM)
+            _s.connect((_robot_host, 9559))
+            _local_ip = _s.getsockname()[0]
+            _s.close()
+        except Exception:
+            _local_ip = "localhost"
+        dashboard_url = f"http://{_local_ip}:{args.port}"
+        _log(f"Dashboard URL: {dashboard_url}")
 
-        # Start the tablet input broker before deploying pages
-        _start_tablet_broker(args.port)
+        # Register a qi service 'TabletInput' with a notify() method.
+        # The tablet JS calls QiSession → service('TabletInput') → notify(json),
+        # routed back through the existing SSH reverse tunnel.
+        class _TabletInputSvc:
+            def notify(self, json_str):
+                try:
+                    _choice_queue.put(_json.loads(str(json_str)))
+                except Exception:
+                    pass
+
+        _tab_svc = _TabletInputSvc()
+        session.registerService("TabletInput", _tab_svc)
+        _log("Tablet input service ready.")
 
         # Deploy tablet pages directly to the robot via SSH
         on_robot = deploy_tablet_pages(
             robot_ip=_robot_host,
-            dash_url=dashboard_url,
             src_dir=_TABLET_SRC_DIR,
         )
         if not on_robot:

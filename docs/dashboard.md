@@ -7,7 +7,7 @@ touch sensor states, and lets you toggle pipeline modules at runtime.
 ## Starting the Dashboard
 
 ```bash
-source .venv_students/bin/activate
+source .venv/bin/activate
 python HRI_lab_Pepper/dashboard.py --url tcp://ROBOT_IP:9559
 ```
 

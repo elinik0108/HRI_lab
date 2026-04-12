@@ -389,7 +389,6 @@ def robot_loop(args):
     print("[INIT] Connecting to Pepper ...")
     session = PepperSession.connect(args.url)
 
-    # Detect our LAN IP as seen from the robot, for tablet webview URLs
     _robot_host = args.url.split("://")[-1].split(":")[0]
     try:
         _s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -400,6 +399,24 @@ def robot_loop(args):
         _local_ip = "localhost"
     _dashboard_base_url = f"http://{_local_ip}:{args.port}"
     print(f"[INIT] Dashboard URL (for tablet): {_dashboard_base_url}")
+
+    # Register a qi service 'TabletInput' with a notify() method.
+    # The tablet JS calls QiSession → service('TabletInput') → notify(json_str),
+    # which the robot routes through the existing SSH reverse tunnel to here.
+    class _TabletInputSvc:
+        def notify(self, json_str):
+            try:
+                entry = json.loads(str(json_str))
+                entry.setdefault("ts", time.time())
+                _tablet_inputs.append(entry)
+                broadcast("tablet_input", entry)
+            except Exception:
+                pass
+
+    _tab_svc = _TabletInputSvc()
+    _tab_svc_id = session.registerService("TabletInput", _tab_svc)
+    PepperSession.register_cleanup(lambda: session.unregisterService(_tab_svc_id))
+    print("[INIT] Tablet input service ready.")
 
     print("[INIT] Loading modules ...")
     cam          = PepperCamera(session)
@@ -428,7 +445,6 @@ def robot_loop(args):
     global _tablet_deployed
     _tablet_deployed = deploy_tablet_pages(
         robot_ip=_robot_host,
-        dash_url=_dashboard_base_url,
         src_dir=_STATIC_DIR / "tablet",
     )
 
@@ -647,10 +663,19 @@ def robot_loop(args):
 
             # ── STT management ──
             if do_stt and not stt_active:
-                stt.register_and_subscribe()
-                stt_active = True
-                threading.Thread(target=_stt_listen_loop, daemon=True).start()
-                print("[CORE] STT started — listening ...")
+                stt_active = True   # set before thread so the loop doesn't re-enter
+                def _start_stt():
+                    try:
+                        stt.register_and_subscribe()
+                        threading.Thread(target=_stt_listen_loop, daemon=True).start()
+                        print("[CORE] STT started — listening ...")
+                    except Exception as exc:
+                        nonlocal stt_active
+                        stt_active = False
+                        with _flags_lock:
+                            pipeline_flags["stt"] = False
+                        print(f"[CORE] STT failed to start: {exc}")
+                threading.Thread(target=_start_stt, daemon=True).start()
             elif not do_stt and stt_active:
                 stt.unsubscribe()
                 stt_active = False

@@ -231,10 +231,11 @@ npm install            # installs Babel + polyfill packages into node_modules/
 
 ---
 
-## `deploy_tablet_pages(robot_ip, dash_url, src_dir)` → `bool`
+## `deploy_tablet_pages(robot_ip, src_dir)` → `bool`
 
 Copies compiled HTML pages from `src_dir` to the robot via SSH/SFTP so the
 tablet loads them over the internal WiFi bridge instead of the laptop.
+`dist/` is rebuilt automatically via `node build.js` before each deploy.
 
 ```python
 from pathlib import Path
@@ -243,7 +244,6 @@ from HRI_lab_Pepper.tablet import deploy_tablet_pages
 src = Path("HRI_lab_Pepper/dashboard/static/tablet")
 ok  = deploy_tablet_pages(
     robot_ip = "172.18.48.50",
-    dash_url = "http://192.168.1.10:8080",   # laptop dashboard URL
     src_dir  = src,
 )
 if ok:
@@ -259,7 +259,6 @@ tablet.show_webview(f"{base}/welcome.html?title=Hello")
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `robot_ip` | `str` | Robot IP address |
-| `dash_url` | `str` | Laptop dashboard URL — embedded in HTML so tablet POSTs reach it |
 | `src_dir` | `Path` | Directory containing the tablet pages (chooses `dist/` if present) |
 
 Returns `True` on success, `False` on any failure (paramiko missing, SSH error).

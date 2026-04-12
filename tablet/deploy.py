@@ -12,7 +12,6 @@ Usage::
 
     on_robot = deploy_tablet_pages(
         robot_ip=  "172.18.48.50",
-        dash_url=  "http://192.168.1.10:8080",
         src_dir=   Path("dashboard/static/tablet"),
     )
 
@@ -21,6 +20,7 @@ the dashboard server and standalone demo scripts can call it without coupling.
 """
 
 import io
+import subprocess
 from pathlib import Path
 
 # Robot's fixed internal IP — only reachable by the tablet over the dedicated
@@ -48,7 +48,7 @@ def sftp_makedirs(sftp, remote_path: str) -> None:
                 pass  # concurrent creation or already exists
 
 
-def deploy_tablet_pages(robot_ip: str, dash_url: str, src_dir: Path) -> bool:
+def deploy_tablet_pages(robot_ip: str, src_dir: Path) -> bool:
     """
     Copy tablet HTML pages from *src_dir* to the robot at::
 
@@ -59,11 +59,11 @@ def deploy_tablet_pages(robot_ip: str, dash_url: str, src_dir: Path) -> bool:
         http://198.18.0.1/apps/tablet/<page>
 
     If *src_dir* contains a ``dist/`` sub-directory it will be preferred (ES5,
-    compatible with the robot's old Chromium browser).
+    compatible with the robot's old Chromium browser).  The ``dist/`` folder is
+    rebuilt automatically via ``node build.js`` before each deploy.
 
-    Every ``*.html`` file has its ``fetch("/api/tablet_input"`` callback URL
-    patched to the absolute ``<dash_url>/api/tablet_input`` so the tablet can
-    still reach the laptop dashboard server across the LAN.
+    Tablet pages use ``QiSession`` (JS) to call the ``TabletInput`` qi service
+    registered by the Python process, so no URL patching is needed.
 
     SSH authentication is tried in order:
         1. keyboard-interactive (``nao`` / ``nao``)
@@ -81,6 +81,24 @@ def deploy_tablet_pages(robot_ip: str, dash_url: str, src_dir: Path) -> bool:
         return False
 
     dist_dir   = src_dir / "dist"
+
+    # Auto-rebuild dist/ if node + node_modules are available.
+    build_js  = src_dir / "build.js"
+    node_mods = src_dir / "node_modules"
+    if build_js.exists():
+        if not node_mods.exists():
+            print("[TABLET] node_modules not found — running npm install ...")
+            try:
+                subprocess.run(["npm", "install"], cwd=src_dir, check=True, capture_output=True)
+                print("[TABLET] npm install done.")
+            except (subprocess.CalledProcessError, FileNotFoundError) as exc:
+                print(f"[TABLET] WARN: npm install failed ({exc}) — using existing dist/.")
+        try:
+            subprocess.run(["node", "build.js"], cwd=src_dir, check=True, capture_output=True)
+            print("[TABLET] dist/ rebuilt.")
+        except (subprocess.CalledProcessError, FileNotFoundError) as exc:
+            print(f"[TABLET] WARN: build.js failed ({exc}) — using existing dist/.")
+
     deploy_dir = dist_dir if dist_dir.is_dir() else src_dir
     if not deploy_dir.is_dir():
         print(f"[TABLET] Tablet pages not found at {deploy_dir} — skipping deploy.")
@@ -162,15 +180,6 @@ def deploy_tablet_pages(robot_ip: str, dash_url: str, src_dir: Path) -> bool:
             if f.name in ("build.js", "package.json", "package-lock.json"):
                 continue
             data = f.read_bytes()
-            if f.name.endswith(".html"):
-                data = data.replace(
-                    b'fetch("/api/tablet_input"',
-                    f'fetch("{dash_url}/api/tablet_input"'.encode(),
-                )
-                data = data.replace(
-                    b"fetch('/api/tablet_input'",
-                    f"fetch('{dash_url}/api/tablet_input'".encode(),
-                )
             sftp.putfo(io.BytesIO(data), f"{TABLET_REMOTE_DIR}/{f.name}")
             print(f"[TABLET]   deployed {f.name}")
             deployed += 1

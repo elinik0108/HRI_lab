@@ -212,11 +212,20 @@
 
       const payload = { action: "card_choice", value, index };
 
+      // Primary: direct qi service call — routes via SSH tunnel to the laptop.
+      try {
+        var _qs = new QiSession();
+        _qs.service('TabletInput').then(function(m) {
+          m.notify(JSON.stringify(payload));
+        }).catch(function() {});
+      } catch(_e) {}
+
+      // Fallback: HTTP POST — works when page is served directly by the laptop dashboard
       fetch("/api/tablet_input", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify(payload),
-      }).catch(() => {/* best-effort */});
+      }).catch(() => {});
 
       const fb     = document.getElementById("feedback");
       const fbIcon = document.getElementById("fb-icon");
@@ -233,6 +242,6 @@
       }, 1800);
     }
   </script>
-  <script src="nav.js"></script>
-</body>
+  <script src="/libs/qimessaging/2/qimessaging.js"></script>
+<script src="nav.js"></script>
 </html>

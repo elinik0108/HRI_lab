@@ -41,20 +41,6 @@ Upright with all joints at zero angle.
 
 Lower crouch position (reduces height, less intimidating).
 
----
-
-### `sit(speed=None) → None`
-
-Sitting position (requires a chair-height surface nearby).
-
----
-
-### `sit_relax(speed=None) → None`
-
-Relaxed sitting with head tilted slightly.
-
----
-
 ### `go_to(posture_name, speed=None) → bool`
 
 Move to any NAOqi posture by name. Returns `True` on success.

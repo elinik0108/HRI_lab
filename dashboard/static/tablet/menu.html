@@ -151,12 +151,22 @@
 
       const payload = { action: 'menu_choice', value, index };
 
-      // POST to dashboard server (best-effort — works when served by dashboard)
+      // Primary: direct qi service call — routes via SSH tunnel to the laptop.
+      // QiSession connects to ws://198.18.0.1:9559 (robot bus); the robot
+      // forwards the call to our registered Python service through the tunnel.
+      try {
+        var _qs = new QiSession();
+        _qs.service('TabletInput').then(function(svc) {
+          svc.notify(JSON.stringify(payload));
+        }).catch(function() {});
+      } catch(_e) {}
+
+      // Fallback: HTTP POST — works when page is served directly by the laptop dashboard
       fetch('/api/tablet_input', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
-      }).catch(() => {/* server might not be reachable from tablet browser */});
+      }).catch(() => {});
 
       // Visual feedback
       const fb = document.getElementById('feedback');
@@ -170,6 +180,6 @@
       }, 1800);
     }
   </script>
+<script src="/libs/qimessaging/2/qimessaging.js"></script>
 <script src="nav.js"></script>
-</body>
 </html>
