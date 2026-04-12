@@ -76,7 +76,7 @@ pip install "openvino>=2024.0" --quiet
 ok "OpenVINO installed."
 
 log "       Installing Naoqi (qi) SDK …"
-elif   [ "$PY_MAJOR" -eq 3 ] && [ "$PY_MINOR" -eq 8 ]; then
+if   [ "$PY_MAJOR" -eq 3 ] && [ "$PY_MINOR" -eq 8 ]; then
     pip install https://github.com/aldebaran/libqi-python/releases/download/qi-python-v3.1.5/qi-3.1.5-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl --quiet
 elif   [ "$PY_MAJOR" -eq 3 ] && [ "$PY_MINOR" -eq 9 ]; then
     pip install https://github.com/aldebaran/libqi-python/releases/download/qi-python-v3.1.5/qi-3.1.5-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl --quiet

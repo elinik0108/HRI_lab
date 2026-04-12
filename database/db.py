@@ -10,7 +10,7 @@ Quick start
 -----------
     from HRI_lab_Pepper.database import DialogDB
 
-    db = DialogDB()                     # creates pepper_dialog.db next to your script
+    db = DialogDB()                     # creates database.db next to your script
 
     # --- Logging a conversation ---
     db.log("robot", "Hello! How can I help you?")
@@ -57,7 +57,7 @@ class DialogDB:
     ----------
     path : str
         Path to the ``.db`` file.  Created automatically if it does not exist.
-        Defaults to ``pepper_dialog.db`` in the current working directory.
+        Defaults to ``database/database.db`` in the current working directory.
 
     Examples
     --------
@@ -101,7 +101,7 @@ class DialogDB:
     );
     """
 
-    def __init__(self, path: str = "pepper_dialog.db") -> None:
+    def __init__(self, path: str = "database/database.db") -> None:
         self._path = path
         self._lock = threading.Lock()
         self._conn = sqlite3.connect(path, check_same_thread=False)

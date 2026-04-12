@@ -9,12 +9,12 @@ server.
 ### Constructor
 
 ```python
-DialogDB(path="pepper_dialog.db")
+DialogDB(path="database/database.db")
 ```
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `path` | `str` | `"pepper_dialog.db"` | Path to the SQLite file |
+| `path` | `str` | `"database/database.db"` | Path to the SQLite file |
 
 The database file is created automatically if it does not exist.
 
