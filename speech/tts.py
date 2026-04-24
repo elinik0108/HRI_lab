@@ -21,6 +21,7 @@ Usage
     tts.set_speed(90)      # % of normal speed (100 = normal)
 """
 
+
 try:
     import qi
 except ImportError:
