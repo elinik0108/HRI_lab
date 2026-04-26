@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pick a shoe</title>
+  <link rel="stylesheet" href="base.css">
+  <link rel="stylesheet" href="shoe_picker.css">
+</head>
+<body>
+  <div class="page">
+    <h1 class="title" id="title-el">Please pick a shoe</h1>
+    <p  class="subtitle" id="subtitle-el">Tap to choose</p>
+    <div class="card-grid" id="card-grid"></div>
+  </div>
+
+  <div class="feedback" id="feedback">
+    <span class="feedback-icon">[shoes image]</span>
+    <p   class="feedback-text" id="fb-text">Selected!</p>
+  </div>
+
+  <script src="/libs/qimessaging/2/qimessaging.js"></script>
+  <script src="shoe_picker.js" defer></script>
+  <script src="nav.js"></script>
+</body>
+</html>

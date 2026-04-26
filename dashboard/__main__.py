@@ -11,15 +11,15 @@ from HRI_lab_Pepper.speech.tts import TextToSpeech
 # ------------------------------------------------------------
 # Setup Pepper
 # ------------------------------------------------------------
-session = PepperSession.connect("tcp://172.18.48.51:9559")
+session = PepperSession.connect("tcp://172.18.48.52:9559")
 
 tts = TextToSpeech(session)
 tts.set_language("English")
-tts.set_volume(50)
-tts.set_speed(90)
+tts.set_volume(70)
+tts.set_speed(80)
 
-tts.speak("Hello, I am Pepper.")
-tts.speak("System is ready.")
+tts.speak("Hi")
+tts.speak("What's going on?")
 
 
 memory = session.service("ALMemory")

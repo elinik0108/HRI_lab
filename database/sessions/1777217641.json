@@ -1,0 +1,25 @@
+{
+  "timestamp": 1777217641.9230278,
+  "shoe_type": "running",
+  "color": null,
+  "size": null,
+  "selected": "s008",
+  "events": [
+    [
+      "stt_product",
+      "running"
+    ],
+    [
+      "stt_color",
+      "no"
+    ],
+    [
+      "stt_size",
+      "for the"
+    ],
+    [
+      "shown_location",
+      "s008"
+    ]
+  ]
+}

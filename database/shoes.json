@@ -1,0 +1,10 @@
+[
+    {"id": "s001", "type": "sneaker", "color": "white",  "sizes": [40, 41, 42, 43, 44], "price":  79.0, "location": "Block 1, shelf A"},
+    {"id": "s002", "type": "sneaker", "color": "black",  "sizes": [39, 40, 41, 42, 43], "price":  89.0, "location": "Block 1, shelf B"},
+    {"id": "s003", "type": "sneaker", "color": "red",    "sizes": [40, 41, 42],         "price":  95.0, "location": "Block 1, shelf C"},
+    {"id": "s004", "type": "boot",    "color": "brown",  "sizes": [41, 42, 43, 44, 45], "price": 149.0, "location": "Block 2, shelf A"},
+    {"id": "s005", "type": "boot",    "color": "black",  "sizes": [40, 41, 42, 43],     "price": 169.0, "location": "Block 2, shelf B"},
+    {"id": "s006", "type": "sandal",  "color": "brown",  "sizes": [38, 39, 40, 41, 42], "price":  49.0, "location": "Block 3, shelf A"},
+    {"id": "s007", "type": "sandal",  "color": "black",  "sizes": [39, 40, 41, 42],     "price":  55.0, "location": "Block 3, shelf B"},
+    {"id": "s008", "type": "running", "color": "blue",   "sizes": [40, 41, 42, 43, 44], "price": 119.0, "location": "Block 1, shelf D"}
+  ]
