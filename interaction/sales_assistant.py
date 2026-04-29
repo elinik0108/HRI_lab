@@ -54,7 +54,7 @@ class SalesAssistant:
         self.state = State.GREET
         self.wait_for_tablet = wait_for_tablet
         self.url_builder = url_builder
-        self.dialogue = dialogue
+        self.dialogue = dialogue or Dialogue()
 
     def run(self):
         while self.state != State.DONE:
@@ -110,11 +110,11 @@ class SalesAssistant:
             shoe_type = parse_shoe_type(transcript)
             if shoe_type:
                 self.ctx.shoe_type = shoe_type
-                self._say("product_confirmed", shoe_type=shoe_type)
+                self._on_say("product_confirmed", shoe_type=shoe_type)
                 return State.ASK_COLOR
             if atmpt < self.MAX_STT_RETRIES:
-                self._say("stt_retry")
-        self._say("stt_failed_fallback")
+                self._on_say("stt_retry")
+        self._on_say("stt_failed_fallback")
         return State.INPUT_REGISTER_FAILURE
 
     ## color
@@ -126,7 +126,7 @@ class SalesAssistant:
         return State.ASK_SIZE
     ## size
     def _on_ask_size(self):
-        self._say("ask_size")
+        self._on_say("ask_size")
         transcript = self._listen()
         self._log_event("stt_size", transcript)
         self.ctx.size = parse_size(transcript)
@@ -150,16 +150,16 @@ class SalesAssistant:
             if without_size and self.ctx.size is not None and self.ctx.size_retries < 1:
                 self.ctx.size_retries += 1
                 available = sorted({sz for s in without_size for sz in s.sizes})
-                self._say("size_unavailable",
+                self._on_say("size_unavailable",
                         asked=self.ctx.size,
                         available=", ".join(str(sz) for sz in available))
                 self._log_event("size_unavailable",
                                 {"asked": self.ctx.size, "available": available})
                 self.ctx.size = None
                 return State.ASK_SIZE
-            self._say("no_match")
+            self._on_say("no_match")
         else:
-            self._say("multiple_matches", count=len(candidates))
+            self._on_say("multiple_matches", count=len(candidates))
         return State.INPUT_REGISTER_FAILURE
 
         # if len(candidates) == 0:
@@ -210,6 +210,6 @@ class SalesAssistant:
 
     def _on_show_location(self):
         s = self.ctx.selected
-        self._say("show_location", color=s.color, type=s.type, location=s.location)
+        self._on_say("show_location", color=s.color, type=s.type, location=s.location)
         self._log_event("shown_location", s.id)
         return State.DONE

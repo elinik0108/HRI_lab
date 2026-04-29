@@ -260,7 +260,7 @@ def run_scenario(tts, stt, camera, detector, tablet, anim, posture, leds, awaren
     posture.stand()
     camera.start()
     time.sleep(1.0)
-    tts.set_volume(75)
+    tts.set_volume(60)
     tts.set_speed(100)
 
 

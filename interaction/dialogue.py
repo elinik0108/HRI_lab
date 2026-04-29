@@ -6,7 +6,7 @@ class Dialogue:
     def __init__(self, path: str = None):
         if path is None:
             path = Path(__file__).parent / "dialogue.json"
-        self._lines = json.load(Path(path).read_text(encoding="utf-8"))
+        self._lines = json.loads(Path(path).read_text(encoding="utf-8"))
 
     def get(self, key: str, **kwargs) -> str:
         if key not in self._lines:

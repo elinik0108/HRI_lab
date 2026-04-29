@@ -43,6 +43,12 @@ from HRI_lab_Pepper.config import (
 _YOLO_SIZE = 640
 
 
+
+from pathlib import Path
+
+model_path = Path(__file__).resolve().parent.parent / "yolov8s_openvino_model" / "yolov8s.xml"
+
+
 class HumanDetector:
     """
     People detector — auto-selects the best available inference backend.

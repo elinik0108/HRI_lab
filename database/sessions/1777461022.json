@@ -1,0 +1,33 @@
+{
+  "timestamp": 1777461022.3383236,
+  "shoe_type": null,
+  "color": null,
+  "size": null,
+  "selected": "s003",
+  "events": [
+    [
+      "stt_product",
+      "table"
+    ],
+    [
+      "stt_product",
+      "seven"
+    ],
+    [
+      "stt_product",
+      "david"
+    ],
+    [
+      "tablet_pick",
+      {
+        "action": "shoe_choice",
+        "value": "s003",
+        "index": 2
+      }
+    ],
+    [
+      "shown_location",
+      "s003"
+    ]
+  ]
+}
