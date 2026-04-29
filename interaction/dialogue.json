@@ -1,0 +1,42 @@
+{
+  "greet": [
+    "Hi! I'm Kiwi. I can help you find the right shoes today.",
+    "Hello! I'm Kiwi — let me help you find some shoes.",
+    "Welcome! I'm Kiwi, your shoe assistant for today."
+  ],
+
+  "ask_product": "What kind of shoe are you looking for? For example: {types}.",
+
+  "product_confirmed": "Got it — {shoe_type}.",
+
+  "stt_retry": [
+    "Sorry, I didn't catch that. Could you say it again?",
+    "Hmm, I missed that. One more time?"
+  ],
+
+  "stt_failed_fallback": "No worries. Let me show you what we have on the tablet.",
+
+  "ask_color": [
+    "What color would you like?",
+    "Do you have any color in mind?"                
+    ],
+
+  "ask_size": [
+    "And what size?",
+    "And what size do you want?"
+  ],
+
+  "size_unavailable": "Sorry, we don't have size {asked} in that style. We have it in sizes {available}. What size would you like instead?",
+
+  "no_match": "I couldn't find an exact match. Let me show you what's close.",
+
+  "multiple_matches": "I found {count} options. Please pick one on the tablet.",
+
+  "show_location": "You can find the {color} {type} in {location}.",
+
+  "farewell": [
+    "I hope I helped! Come back anytime.",
+    "Glad to help",
+    "Enjoy your new shoes!"
+  ]
+}

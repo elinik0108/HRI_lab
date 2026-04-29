@@ -1,12 +1,12 @@
+import json, time
 from enum import Enum, auto
 from dataclasses import dataclass, field
 from typing import Optional, List
-import json
 from urllib.parse import quote
-import json, time
 from pathlib import Path
 
 from .parsers import parse_shoe_type, parse_color, parse_size
+from .dialogue import Dialogue
 
 ## changes to lower case when called
 class State(Enum):
@@ -45,7 +45,7 @@ class SalesAssistant:
     # TODO 3:
     MAX_STT_RETRIES = 2
 
-    def __init__(self, tts, stt, tablet, anim, leds, catalog, dashboard_url, on_robot=False, wait_for_tablet=None, url_builder=None):
+    def __init__(self, tts, stt, tablet, anim, leds, catalog, dashboard_url, on_robot=False, wait_for_tablet=None, url_builder=None, dialogue=None):
         self.tts, self.stt, self.tablet = tts, stt, tablet
         self.anim, self.leds = anim, leds
         self.catalog = catalog
@@ -54,6 +54,7 @@ class SalesAssistant:
         self.state = State.GREET
         self.wait_for_tablet = wait_for_tablet
         self.url_builder = url_builder
+        self.dialogue = dialogue
 
     def run(self):
         while self.state != State.DONE:
@@ -89,14 +90,17 @@ class SalesAssistant:
     def _log_event(self, kind, payload):
         self.ctx.events.append((kind, payload))
 
+    def _on_say(self, key, **kwargs):
+        self.tts.speak(self.dialogue.get(key, **kwargs))
+
     def _on_greet(self):
         self.anim.run_async("animations/Stand/Gestures/Hey_1")
-        self.tts.speak("Hi! I'm Kiwi. I can help you find the right shoes today.")
+        self._on_say("greet")
         return State.ASK_PRODUCT
 
     def _on_ask_product(self):
         types = ", ".join(self.catalog.types())
-        self.tts.speak(f"What kind of shoe are you looking for? " f"For example: {types}.")
+        self._on_say("ask_product", types=types)
         return State.LISTEN_PRODUCT
 
     def _on_listen_product(self):
@@ -106,23 +110,23 @@ class SalesAssistant:
             shoe_type = parse_shoe_type(transcript)
             if shoe_type:
                 self.ctx.shoe_type = shoe_type
-                self.tts.speak(f"Got it — {shoe_type}.")
+                self._say("product_confirmed", shoe_type=shoe_type)
                 return State.ASK_COLOR
             if atmpt < self.MAX_STT_RETRIES:
-                self.tts.speak("Sorry, I didn't catch that. Could you say it again?")
-        self.tts.speak("No worries. Let me show you what we have on the tablet.")
+                self._say("stt_retry")
+        self._say("stt_failed_fallback")
         return State.INPUT_REGISTER_FAILURE
 
     ## color
     def _on_ask_color(self):
-        self.tts.speak("What color would you like?")
+        self._on_say("ask_color")
         transcript = self._listen()
         self._log_event("stt_color", transcript)
         self.ctx.color = parse_color(transcript)
         return State.ASK_SIZE
     ## size
     def _on_ask_size(self):
-        self.tts.speak("And what size?")
+        self._say("ask_size")
         transcript = self._listen()
         self._log_event("stt_size", transcript)
         self.ctx.size = parse_size(transcript)
@@ -130,30 +134,32 @@ class SalesAssistant:
 
     ## search for the cutstomer input
     def _on_narrow_down(self):
-        candidates = self.catalog.filter(shoe_type=self.ctx.shoe_type, color=self.ctx.color, size=self.ctx.size,)
+        candidates = self.catalog.filter(
+            shoe_type=self.ctx.shoe_type,
+            color=self.ctx.color,
+            size=self.ctx.size,
+        )
         if len(candidates) == 1:
             self.ctx.selected = candidates[0]
             return State.SHOW_LOCATION
-
         if len(candidates) == 0:
-            without_size = self.catalog.filter(shoe_type=self.ctx.shoe_type, color=self.ctx.color,)
-
+            without_size = self.catalog.filter(
+                shoe_type=self.ctx.shoe_type,
+                color=self.ctx.color,
+            )
             if without_size and self.ctx.size is not None and self.ctx.size_retries < 1:
-                self.ctx.size_retries +=1
-                ##sort available sizes
+                self.ctx.size_retries += 1
                 available = sorted({sz for s in without_size for sz in s.sizes})
-                sizes_str = ", ".join(str(sz) for sz in available)
-                self.tts.speak(f"Sorry, we don't have size {self.ctx.size} in that style."
-                f"We have it in sizes {sizes_str}. What size would you like instead?")
-                self._log_event("size_unavailable, asked if the customer wants different size and showed those")
+                self._say("size_unavailable",
+                        asked=self.ctx.size,
+                        available=", ".join(str(sz) for sz in available))
+                self._log_event("size_unavailable",
+                                {"asked": self.ctx.size, "available": available})
                 self.ctx.size = None
-
                 return State.ASK_SIZE
-
-            self.tts.speak("I couldn't find an exact match. Let me show you what's close.")
-            return State.INPUT_REGISTER_FAILURE
-
-        self.tts.speak(f"I found {len(candidates)} options. Please pick one on the tablet.")
+            self._say("no_match")
+        else:
+            self._say("multiple_matches", count=len(candidates))
         return State.INPUT_REGISTER_FAILURE
 
         # if len(candidates) == 0:
@@ -203,10 +209,7 @@ class SalesAssistant:
         return State.SHOW_LOCATION if self.ctx.selected else State.DONE
 
     def _on_show_location(self):
-        # TODO right now the robot is just saying the location.
-        ##     It should point towards the position the selected shoes are
         s = self.ctx.selected
-        self.tts.speak(f"You can find the {s.color} {s.type} in {s.location}.")
+        self._say("show_location", color=s.color, type=s.type, location=s.location)
         self._log_event("shown_location", s.id)
-
         return State.DONE
