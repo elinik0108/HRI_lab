@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional
 
 @dataclass
 class Shoe:
@@ -9,6 +9,9 @@ class Shoe:
     sizes: List[int]
     price: float
     location: str
+    
+    marker_label: Optional[str] = None
+    table_angle_deg: float = 0.0
 
     def matches(self, shoe_type=None, color=None, size=None, max_price=None) -> bool:
         if shoe_type and self.type != shoe_type:    

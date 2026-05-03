@@ -1,0 +1,51 @@
+{
+  "timestamp": 1777720284.4713597,
+  "shoe_type": "sneaker",
+  "color": "red",
+  "size": null,
+  "selected": "s003",
+  "events": [
+    [
+      "stt_product",
+      "sneakers"
+    ],
+    [
+      "stt_color",
+      "red"
+    ],
+    [
+      "stt_size",
+      "50"
+    ],
+    [
+      "size_unavailable",
+      {
+        "asked": 50,
+        "available": [
+          40,
+          41,
+          42
+        ]
+      }
+    ],
+    [
+      "stt_size",
+      ""
+    ],
+    [
+      "shown_location",
+      "s003"
+    ],
+    [
+      "vision_miss",
+      {
+        "id": "s003",
+        "marker": "book"
+      }
+    ],
+    [
+      "pointed",
+      "s003"
+    ]
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "timestamp": 1777722703.5740523,
+  "shoe_type": "sneaker",
+  "color": "blue",
+  "size": null,
+  "selected": "s002",
+  "events": [
+    [
+      "stt_product",
+      "sneaker"
+    ],
+    [
+      "stt_color",
+      "blue"
+    ],
+    [
+      "stt_size",
+      "fifty"
+    ],
+    [
+      "tablet_pick",
+      {
+        "action": "shoe_choice",
+        "value": "s002",
+        "index": 1
+      }
+    ],
+    [
+      "shown_location",
+      "s002"
+    ],
+    [
+      "vision_miss",
+      {
+        "id": "s002",
+        "marker": "bottle"
+      }
+    ],
+    [
+      "pointed",
+      "s002"
+    ]
+  ]
+}

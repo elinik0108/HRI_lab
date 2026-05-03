@@ -1,0 +1,25 @@
+{
+  "timestamp": 1777811540.0780563,
+  "shoe_type": null,
+  "color": null,
+  "size": null,
+  "selected": null,
+  "events": [
+    [
+      "stt_product",
+      "sand"
+    ],
+    [
+      "stt_product",
+      "and ah"
+    ],
+    [
+      "stt_product",
+      "fuck up"
+    ],
+    [
+      "tablet_pick",
+      {}
+    ]
+  ]
+}

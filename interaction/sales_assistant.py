@@ -1,4 +1,4 @@
-import json, time
+import json, time, threading
 from enum import Enum, auto
 from dataclasses import dataclass, field
 from typing import Optional, List
@@ -7,6 +7,7 @@ from pathlib import Path
 
 from .parsers import parse_shoe_type, parse_color, parse_size
 from .dialogue import Dialogue
+from HRI_lab_Pepper.vision.marker_finder import find_marker_bearing
 
 ## changes to lower case when called
 class State(Enum):
@@ -18,6 +19,7 @@ class State(Enum):
     NARROW_DOWN = auto()
     INPUT_REGISTER_FAILURE = auto()
     SHOW_LOCATION = auto()
+    POINT_AT_SHOE = auto()
     DONE = auto()
 
 
@@ -45,7 +47,7 @@ class SalesAssistant:
     # TODO 3:
     MAX_STT_RETRIES = 2
 
-    def __init__(self, tts, stt, tablet, anim, leds, catalog, dashboard_url, on_robot=False, wait_for_tablet=None, url_builder=None, dialogue=None):
+    def __init__(self, tts, stt, tablet, anim, leds, catalog, dashboard_url, on_robot=False, wait_for_tablet=None, url_builder=None, dialogue=None, pointer=None, camera=None, detector=None):
         self.tts, self.stt, self.tablet = tts, stt, tablet
         self.anim, self.leds = anim, leds
         self.catalog = catalog
@@ -55,6 +57,9 @@ class SalesAssistant:
         self.wait_for_tablet = wait_for_tablet
         self.url_builder = url_builder
         self.dialogue = dialogue or Dialogue()
+        self.pointer = pointer
+        self.camera = camera
+        self.detector = detector
 
     def run(self):
         while self.state != State.DONE:
@@ -206,10 +211,62 @@ class SalesAssistant:
 
         shoe_id = choice.get("value") if choice else None
         self.ctx.selected = self.catalog.by_id(shoe_id) if shoe_id else None
+        print(f"[DEBUG _on_input_register_failure] shoe_id={shoe_id!r} selected={self.ctx.selected!r}")
         return State.SHOW_LOCATION if self.ctx.selected else State.DONE
 
     def _on_show_location(self):
         s = self.ctx.selected
-        self._on_say("show_location", color=s.color, type=s.type, location=s.location)
+        self._on_say("show_location_intro", color=s.color, type=s.type)
         self._log_event("shown_location", s.id)
+        return State.POINT_AT_SHOE
+
+
+    def _on_point_at_shoe(self):
+        s = self.ctx.selected
+        if not (self.pointer and self.camera and self.detector and s.marker_label):
+            ##fallback if it goes wrong
+            self._on_say("show_location_detail", location=s.location)
+            self._log_event("point_skipped", "no_pointer_camera_detector_or_marker")
+            return State.DONE
+
+        self.pointer.turn_body(s.table_angle_deg)
+        time.sleep(0.4)
+
+        refined_bearing = None
+        for _ in range(3):
+            frame = self.camera.get_frame()
+            result = find_marker_bearing(frame, self.detector, s.marker_label)
+            if result is not None:
+                refined_bearing, conf = result
+                self._log_event("vision_hit", {
+                    "bearing": refined_bearing, "conf": conf, "marker": s.marker_label,
+                })
+                break
+            time.sleep(0.3)
+
+        if refined_bearing is not None:
+            print(f"[POINTING] marker={s.marker_label!r} bearing={refined_bearing:.1f} deg conf={conf:.2f}")
+            self.pointer.turn_body(refined_bearing)
+            time.sleep(0.3)
+        else:
+            print(f"[POINTING] marker={s.marker_label!r} not found. Using fixed angle only")
+            self._log_event("vision_miss", {"id": s.id, "marker": s.marker_label})
+
+
+        arm_thread = threading.Thread(
+            target=self.pointer.raise_right_arm,
+            kwargs={"hold_seconds": 3.5},
+            daemon=True,
+        )
+        arm_thread.start()
+
+        time.sleep(0.3)
+        self._on_say("show_location_pointing", color=s.color, type=s.type)
+
+        self._on_say("show_location_detail", location=s.location)
+
+        # Wait for the arm to come down
+        arm_thread.join(timeout=8.0)
+
+        self._log_event("pointed", s.id)
         return State.DONE

@@ -8,15 +8,35 @@
   <link rel="stylesheet" href="shoe_picker.css">
 </head>
 <body>
-  <div class="page">
-    <h1 class="title" id="title-el">Please pick a shoe</h1>
-    <p  class="subtitle" id="subtitle-el">Tap to choose</p>
+  <!-- ── Grid view ───────────────────────────────────────────────── -->
+  <div class="page" id="grid-view">
+    <h1 class="title" id="title-el">Pick your shoe</h1>
+   <!-- <p class="subtitle" id="subtitle-el">Tap a card</p> -->
     <div class="card-grid" id="card-grid"></div>
   </div>
 
+  <!-- ── Detail view (hidden by default) ─────────────────────────── -->
+  <div class="page detail-view hidden" id="detail-view">
+    <button class="back-btn" id="back-btn">← Back</button>
+
+    <div class="detail-body">
+      <div class="detail-image-wrap">
+        <img class="detail-image" id="detail-image" alt="">
+      </div>
+      <div class="detail-info">
+        <h2 class="detail-title" id="detail-title"></h2>
+        <p class="detail-meta" id="detail-meta"></p>
+        <p class="detail-price" id="detail-price"></p>
+        <button class="confirm-btn" id="confirm-btn">Confirm choice</button>
+      </div>
+    </div>
+  </div>
+  
+
+  <!-- ── Confirmation flash ──────────────────────────────────────── -->
   <div class="feedback" id="feedback">
-    <span class="feedback-icon">[shoes image]</span>
-    <p   class="feedback-text" id="fb-text">Selected!</p>
+    <span class="feedback-icon">👟</span>
+    <p class="feedback-text" id="fb-text">Selected!</p>
   </div>
 
   <script src="/libs/qimessaging/2/qimessaging.js"></script>

@@ -1,0 +1,44 @@
+{
+  "timestamp": 1777805795.6113875,
+  "shoe_type": null,
+  "color": null,
+  "size": null,
+  "selected": "s002",
+  "events": [
+    [
+      "stt_product",
+      "saddam"
+    ],
+    [
+      "stt_product",
+      "the and up"
+    ],
+    [
+      "stt_product",
+      "but"
+    ],
+    [
+      "tablet_pick",
+      {
+        "action": "shoe_choice",
+        "value": "s002",
+        "index": 1
+      }
+    ],
+    [
+      "shown_location",
+      "s002"
+    ],
+    [
+      "vision_miss",
+      {
+        "id": "s002",
+        "marker": "bottle"
+      }
+    ],
+    [
+      "pointed",
+      "s002"
+    ]
+  ]
+}

@@ -74,7 +74,7 @@ const CSS_VARS = {
   '--radius':     '1rem',
   '--radius-lg':  '1.5rem',
   // clamp(2rem, 6vw, 4.5rem)    @ 1280px → 6vw ≈ 4.8rem > max → 4.5rem
-  '--title-size': '4.5rem',
+  '--title-size': '2rem',
   // clamp(1.4rem, 3vw, 2.2rem)  → 2.2rem
   '--body-size':  '2.2rem',
   // clamp(1rem, 2vw, 1.5rem)    → 1.5rem
@@ -82,6 +82,28 @@ const CSS_VARS = {
   // clamp(1.2rem, 3vw, 2rem)    → 2rem
   '--btn-size':   '2rem',
 };
+
+
+/**
+ * Recursively copy a directory tree from `src` to `dest`.
+ * Used for static assets (images, fonts, etc.) that don't need transformation.
+ */
+function copyDir(src, dest) {
+  if (!fs.existsSync(src)) return;
+  if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
+
+  var entries = fs.readdirSync(src);
+  for (var i = 0; i < entries.length; i++) {
+    var entry = entries[i];
+    var srcPath  = path.join(src, entry);
+    var destPath = path.join(dest, entry);
+    if (fs.statSync(srcPath).isDirectory()) {
+      copyDir(srcPath, destPath);
+    } else {
+      fs.copyFileSync(srcPath, destPath);
+    }
+  }
+}
 
 /**
  * Inline all CSS custom-property references.
@@ -216,6 +238,18 @@ if (!fs.existsSync(DIST_DIR)) {
 var polyfillCode = buildPolyfills();
 fs.writeFileSync(path.join(DIST_DIR, 'polyfills.js'), polyfillCode, 'utf8');
 console.log('[build] polyfills.js → dist/polyfills.js');
+
+// copies static asset directories (like images) into dist/
+var ASSET_DIRS = ['img'];
+for (var ai = 0; ai < ASSET_DIRS.length; ai++) {
+  var dirName = ASSET_DIRS[ai];
+  var srcDir  = path.join(SRC_DIR, dirName);
+  var destDir = path.join(DIST_DIR, dirName);
+  if (fs.existsSync(srcDir)) {
+    copyDir(srcDir, destDir);
+    console.log('[build] copied ' + dirName + '/dist/' + dirName + '/');
+  }
+}
 
 // 2. Process each source file
 var entries = fs.readdirSync(SRC_DIR);

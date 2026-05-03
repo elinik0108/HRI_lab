@@ -1,0 +1,44 @@
+{
+  "timestamp": 1777804421.664706,
+  "shoe_type": null,
+  "color": null,
+  "size": null,
+  "selected": "s002",
+  "events": [
+    [
+      "stt_product",
+      "what"
+    ],
+    [
+      "stt_product",
+      "and after that and up road"
+    ],
+    [
+      "stt_product",
+      "on the summer"
+    ],
+    [
+      "tablet_pick",
+      {
+        "action": "shoe_choice",
+        "value": "s002",
+        "index": 1
+      }
+    ],
+    [
+      "shown_location",
+      "s002"
+    ],
+    [
+      "vision_miss",
+      {
+        "id": "s002",
+        "marker": "bottle"
+      }
+    ],
+    [
+      "pointed",
+      "s002"
+    ]
+  ]
+}

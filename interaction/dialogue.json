@@ -32,7 +32,18 @@
 
   "multiple_matches": "I found {count} options. Please pick one on the tablet.",
 
-  "show_location": "You can find the {color} {type} in {location}.",
+  "show_location_intro": [
+    "Let me show you where the {color} {type} is.",
+    "Let me show you the {color} {type}."
+  ],
+  
+  "show_location_pointing": [
+    "The {color} {type} is over there.",
+    "Right over there.",
+    "It's that way."
+  ],
+  
+  "show_location_detail": "You can find it on {location}.",
 
   "farewell": [
     "I hope I helped! Come back anytime.",

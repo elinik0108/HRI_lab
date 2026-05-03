@@ -1,0 +1,36 @@
+{
+  "timestamp": 1777809890.829041,
+  "shoe_type": "running",
+  "color": "blue",
+  "size": null,
+  "selected": "s008",
+  "events": [
+    [
+      "stt_product",
+      "running"
+    ],
+    [
+      "stt_color",
+      "blue"
+    ],
+    [
+      "stt_size",
+      "for what"
+    ],
+    [
+      "shown_location",
+      "s008"
+    ],
+    [
+      "vision_miss",
+      {
+        "id": "s008",
+        "marker": "sports ball"
+      }
+    ],
+    [
+      "pointed",
+      "s008"
+    ]
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "timestamp": 1777720421.8467166,
+  "shoe_type": null,
+  "color": null,
+  "size": null,
+  "selected": "s003",
+  "events": [
+    [
+      "stt_product",
+      ""
+    ],
+    [
+      "stt_product",
+      ""
+    ],
+    [
+      "stt_product",
+      ""
+    ],
+    [
+      "tablet_pick",
+      {
+        "action": "shoe_choice",
+        "value": "s003",
+        "index": 0
+      }
+    ],
+    [
+      "shown_location",
+      "s003"
+    ],
+    [
+      "vision_miss",
+      {
+        "id": "s003",
+        "marker": "book"
+      }
+    ],
+    [
+      "pointed",
+      "s003"
+    ]
+  ]
+}

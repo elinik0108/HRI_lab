@@ -1,0 +1,44 @@
+{
+  "timestamp": 1777725379.609734,
+  "shoe_type": "sandal",
+  "color": "blue",
+  "size": 46,
+  "selected": "s007",
+  "events": [
+    [
+      "stt_product",
+      "sandal"
+    ],
+    [
+      "stt_color",
+      "blue"
+    ],
+    [
+      "stt_size",
+      "forty six"
+    ],
+    [
+      "tablet_pick",
+      {
+        "action": "shoe_choice",
+        "value": "s007",
+        "index": 1
+      }
+    ],
+    [
+      "shown_location",
+      "s007"
+    ],
+    [
+      "vision_miss",
+      {
+        "id": "s007",
+        "marker": "apple"
+      }
+    ],
+    [
+      "pointed",
+      "s007"
+    ]
+  ]
+}

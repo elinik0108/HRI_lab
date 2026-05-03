@@ -173,15 +173,29 @@ def deploy_tablet_pages(robot_ip: str, src_dir: Path) -> bool:
     try:
         sftp_makedirs(sftp, TABLET_REMOTE_DIR)
 
+        SKIP_NAMES = {"build.js", "package.json", "package-lock.json"}
+        SKIP_DIRS  = {"node_modules"}
+
         deployed = 0
-        for f in sorted(deploy_dir.iterdir()):
+        for f in sorted(deploy_dir.rglob("*")):
             if not f.is_file():
                 continue
-            if f.name in ("build.js", "package.json", "package-lock.json"):
+            if f.name in SKIP_NAMES:
                 continue
+            # Skip anything inside an ignored directory at any depth
+            if any(part in SKIP_DIRS for part in f.relative_to(deploy_dir).parts):
+                continue
+
+            rel_path    = f.relative_to(deploy_dir).as_posix()
+            remote_path = f"{TABLET_REMOTE_DIR}/{rel_path}"
+
+            # Make sure the remote subdirectory exists
+            remote_dir = "/".join(remote_path.split("/")[:-1])
+            sftp_makedirs(sftp, remote_dir)
+
             data = f.read_bytes()
-            sftp.putfo(io.BytesIO(data), f"{TABLET_REMOTE_DIR}/{f.name}")
-            print(f"[TABLET]   deployed {f.name}")
+            sftp.putfo(io.BytesIO(data), remote_path)
+            print(f"[TABLET]   deployed {rel_path}")
             deployed += 1
 
         sftp.close()

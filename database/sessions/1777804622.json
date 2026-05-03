@@ -1,0 +1,48 @@
+{
+  "timestamp": 1777804622.8885214,
+  "shoe_type": "sandal",
+  "color": null,
+  "size": null,
+  "selected": "s007",
+  "events": [
+    [
+      "stt_product",
+      "the"
+    ],
+    [
+      "stt_product",
+      "sandals"
+    ],
+    [
+      "stt_color",
+      "hello"
+    ],
+    [
+      "stt_size",
+      "for the hamptons"
+    ],
+    [
+      "tablet_pick",
+      {
+        "action": "shoe_choice",
+        "value": "s007",
+        "index": 1
+      }
+    ],
+    [
+      "shown_location",
+      "s007"
+    ],
+    [
+      "vision_miss",
+      {
+        "id": "s007",
+        "marker": "apple"
+      }
+    ],
+    [
+      "pointed",
+      "s007"
+    ]
+  ]
+}

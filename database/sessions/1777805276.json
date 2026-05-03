@@ -1,0 +1,36 @@
+{
+  "timestamp": 1777805276.018604,
+  "shoe_type": "sneaker",
+  "color": "red",
+  "size": 42,
+  "selected": "s003",
+  "events": [
+    [
+      "stt_product",
+      "sneakers"
+    ],
+    [
+      "stt_color",
+      "red"
+    ],
+    [
+      "stt_size",
+      "42"
+    ],
+    [
+      "shown_location",
+      "s003"
+    ],
+    [
+      "vision_miss",
+      {
+        "id": "s003",
+        "marker": "book"
+      }
+    ],
+    [
+      "pointed",
+      "s003"
+    ]
+  ]
+}

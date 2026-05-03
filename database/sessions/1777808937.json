@@ -1,0 +1,45 @@
+{
+  "timestamp": 1777808937.9198995,
+  "shoe_type": null,
+  "color": null,
+  "size": null,
+  "selected": "s001",
+  "events": [
+    [
+      "stt_product",
+      "ronnie"
+    ],
+    [
+      "stt_product",
+      "run"
+    ],
+    [
+      "stt_product",
+      "fuck you"
+    ],
+    [
+      "tablet_pick",
+      {
+        "action": "shoe_choice",
+        "value": "s001",
+        "index": 0
+      }
+    ],
+    [
+      "shown_location",
+      "s001"
+    ],
+    [
+      "vision_hit",
+      {
+        "bearing": 22.35625,
+        "conf": 0.8788530230522156,
+        "marker": "cup"
+      }
+    ],
+    [
+      "pointed",
+      "s001"
+    ]
+  ]
+}
