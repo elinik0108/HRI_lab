@@ -1,0 +1,45 @@
+{
+  "timestamp": 1777814464.9855187,
+  "shoe_type": null,
+  "color": null,
+  "size": null,
+  "selected": "s001",
+  "events": [
+    [
+      "stt_product",
+      "and on"
+    ],
+    [
+      "stt_product",
+      "though"
+    ],
+    [
+      "stt_product",
+      "oh"
+    ],
+    [
+      "tablet_pick",
+      {
+        "action": "shoe_choice",
+        "value": "s001",
+        "index": 0
+      }
+    ],
+    [
+      "shown_location",
+      "s001"
+    ],
+    [
+      "vision_hit",
+      {
+        "bearing": 17.98125,
+        "conf": 0.8968748450279236,
+        "marker": "cup"
+      }
+    ],
+    [
+      "pointed",
+      "s001"
+    ]
+  ]
+}

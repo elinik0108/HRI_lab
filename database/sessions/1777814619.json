@@ -1,0 +1,40 @@
+{
+  "timestamp": 1777814619.946316,
+  "shoe_type": "sandal",
+  "color": "brown",
+  "size": null,
+  "selected": "s006",
+  "events": [
+    [
+      "stt_product",
+      "so"
+    ],
+    [
+      "stt_product",
+      "sandal"
+    ],
+    [
+      "stt_color",
+      "brown"
+    ],
+    [
+      "stt_size",
+      "it's the"
+    ],
+    [
+      "shown_location",
+      "s006"
+    ],
+    [
+      "vision_miss",
+      {
+        "id": "s006",
+        "marker": "banana"
+      }
+    ],
+    [
+      "pointed",
+      "s006"
+    ]
+  ]
+}

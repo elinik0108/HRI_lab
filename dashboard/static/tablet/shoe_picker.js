@@ -5,9 +5,6 @@
   //  Read items from URL params
   // ──────────────────────────────────────────────────────────
   const p = new URLSearchParams(location.search);
-  if (p.get("title"))    document.getElementById("title-el").textContent    = p.get("title");
-  if (p.get("subtitle")) document.getElementById("subtitle-el").textContent = p.get("subtitle");
-
   let items = [];
   try { items = JSON.parse(p.get("items") || "[]"); } catch (e) { items = []; }
 

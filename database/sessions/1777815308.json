@@ -1,0 +1,45 @@
+{
+  "timestamp": 1777815308.336617,
+  "shoe_type": "sneaker",
+  "color": null,
+  "size": null,
+  "selected": "s001",
+  "events": [
+    [
+      "stt_product",
+      "sneaker"
+    ],
+    [
+      "stt_color",
+      "no"
+    ],
+    [
+      "stt_size",
+      "sixty"
+    ],
+    [
+      "tablet_pick",
+      {
+        "action": "shoe_choice",
+        "value": "s001",
+        "index": 0
+      }
+    ],
+    [
+      "shown_location",
+      "s001"
+    ],
+    [
+      "vision_hit",
+      {
+        "bearing": 20.431250000000002,
+        "conf": 0.9062027335166931,
+        "marker": "cup"
+      }
+    ],
+    [
+      "pointed",
+      "s001"
+    ]
+  ]
+}

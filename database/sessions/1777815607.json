@@ -1,0 +1,45 @@
+{
+  "timestamp": 1777815607.9592562,
+  "shoe_type": null,
+  "color": null,
+  "size": null,
+  "selected": "s001",
+  "events": [
+    [
+      "stt_product",
+      "nico"
+    ],
+    [
+      "stt_product",
+      "sound"
+    ],
+    [
+      "stt_product",
+      "san"
+    ],
+    [
+      "tablet_pick",
+      {
+        "action": "shoe_choice",
+        "value": "s001",
+        "index": 0
+      }
+    ],
+    [
+      "shown_location",
+      "s001"
+    ],
+    [
+      "vision_hit",
+      {
+        "bearing": 18.025000000000002,
+        "conf": 0.913162350654602,
+        "marker": "cup"
+      }
+    ],
+    [
+      "pointed",
+      "s001"
+    ]
+  ]
+}

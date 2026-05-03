@@ -1,0 +1,65 @@
+{
+  "timestamp": 1777815891.0833135,
+  "shoe_type": "sandal",
+  "color": null,
+  "size": null,
+  "selected": "s006",
+  "events": [
+    [
+      "stt_product",
+      "sam"
+    ],
+    [
+      "stt_product",
+      "sandal"
+    ],
+    [
+      "stt_color",
+      "no"
+    ],
+    [
+      "stt_size",
+      "fifty five"
+    ],
+    [
+      "size_unavailable",
+      {
+        "asked": 55,
+        "available": [
+          38,
+          39,
+          40,
+          41,
+          42
+        ]
+      }
+    ],
+    [
+      "stt_size",
+      "if i"
+    ],
+    [
+      "tablet_pick",
+      {
+        "action": "shoe_choice",
+        "value": "s006",
+        "index": 0
+      }
+    ],
+    [
+      "shown_location",
+      "s006"
+    ],
+    [
+      "vision_miss",
+      {
+        "id": "s006",
+        "marker": "banana"
+      }
+    ],
+    [
+      "pointed",
+      "s006"
+    ]
+  ]
+}
