@@ -1,7 +1,6 @@
 # HRI Pepper Sales Assistant
 
-A Pepper-based sales assistant for a shoe shop. Built for the [course name]
-HRI assignment, [semester].
+A Pepper-based sales assistant for a shoe shop. Built for the Human Robot Interaction course, 2026.
 
 ## What it does
 Pepper waits for a customer to approach, asks what shoes they're looking for via
@@ -20,12 +19,12 @@ GREET → ASK_PRODUCT → LISTEN_PRODUCT → ASK_COLOR → ASK_SIZE → NARROW_D
 
 ### Real robot
 ```bash
-python demos/sales_assistant_robot.py --url tcp://ROBOT_IP:9559
+python dashboard/__main__.py --url tcp://ROBOT_IP:9559
 ```
 
 ### Dry-run (no robot needed)
 ```bash
-python demos/sales_assistant_robot.py --dry-run
+python dashboard/__main__.py --dry-run
 ```
 
 ## How it's structured
