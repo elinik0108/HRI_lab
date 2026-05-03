@@ -1,0 +1,10 @@
+[
+  {"id": "p001", "type": "laptop",     "screen": 13, "price":  799.0, "location": "Block 1, shelf A", "marker_label": "laptop", "table_angle_deg":  30},
+  {"id": "p002", "type": "laptop",     "screen": 15, "price":  899.0, "location": "Block 1, shelf B", "marker_label": "laptop", "table_angle_deg":  15},
+  {"id": "p003", "type": "laptop",     "screen": 17, "price":  999.0, "location": "Block 1, shelf C", "marker_label": "laptop", "table_angle_deg":   0},
+  {"id": "p004", "type": "gaming",     "screen": 15, "price": 1499.0, "location": "Block 2, shelf A", "marker_label": "laptop", "table_angle_deg": -15},
+  {"id": "p005", "type": "gaming",     "screen": 17, "price": 1799.0, "location": "Block 2, shelf B", "marker_label": "laptop", "table_angle_deg": -30},
+  {"id": "p006", "type": "ultrabook",  "screen": 13, "price": 1299.0, "location": "Block 3, shelf A", "marker_label": "laptop", "table_angle_deg":  45},
+  {"id": "p007", "type": "ultrabook",  "screen": 14, "price": 1399.0, "location": "Block 3, shelf B", "marker_label": "laptop", "table_angle_deg": -45},
+  {"id": "p008", "type": "2-in-1",     "screen": 13, "price": 1099.0, "location": "Block 1, shelf D", "marker_label": "laptop", "table_angle_deg":  60}
+]

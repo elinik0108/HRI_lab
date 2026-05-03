@@ -1,0 +1,31 @@
+{
+  "timestamp": 1777820056.2518575,
+  "product_type": "laptop",
+  "screen": 15,
+  "selected": "p002",
+  "events": [
+    [
+      "stt_product",
+      "laptop"
+    ],
+    [
+      "stt_screen",
+      "fifteen"
+    ],
+    [
+      "shown_location",
+      "p002"
+    ],
+    [
+      "vision_miss",
+      {
+        "id": "p002",
+        "marker": "laptop"
+      }
+    ],
+    [
+      "pointed",
+      "p002"
+    ]
+  ]
+}

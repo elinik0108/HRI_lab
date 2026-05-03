@@ -34,7 +34,8 @@ import threading
 import json as _json
 from pathlib import Path
 from HRI_lab_Pepper.interaction.sales_assistant import SalesAssistant
-from HRI_lab_Pepper.models.catalog import ShoeCatalog
+#from HRI_lab_Pepper.models.catalog import ShoeCatalog
+from HRI_lab_Pepper.models.catalog import ProductCatalog
 
 
 # ── Robot drivers ──────────────────────────────────────────────────────────────
@@ -190,8 +191,9 @@ class _FakeSTT:
         #self._replies = iter(["sneakers", "red", "42"])
         #self._replies = iter(["sneakers", "test", "42"])
         #self._replies = iter(["hmm", "red", "42"])
+        self._replies = iter(["laptop", "fifteen"])
 
-        self._replies = iter(["sneakers", "red", "50", "49"])
+        #self._replies = iter(["sneakers", "red", "50", "49"])
     def register_and_subscribe(self): pass
     def listen(self):
         import time; time.sleep(0.3)
@@ -284,7 +286,7 @@ def run_scenario(tts, stt, camera, detector, tablet, anim, posture, leds, awaren
         #tablet.hide()
         _led(leds, "happy")
 
-        catalog = ShoeCatalog.load("database/shoes.json")
+        catalog = ProductCatalog.load("database/products.json")
         assistant = SalesAssistant(
             tts=tts, stt=stt, tablet=tablet, anim=anim, leds=leds,
             catalog=catalog,

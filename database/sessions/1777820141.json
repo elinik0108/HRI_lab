@@ -1,0 +1,35 @@
+{
+  "timestamp": 1777820141.920522,
+  "product_type": "2-in-1",
+  "screen": null,
+  "selected": "p008",
+  "events": [
+    [
+      "stt_product",
+      "terrain"
+    ],
+    [
+      "stt_product",
+      "two in one"
+    ],
+    [
+      "stt_screen",
+      "in"
+    ],
+    [
+      "shown_location",
+      "p008"
+    ],
+    [
+      "vision_miss",
+      {
+        "id": "p008",
+        "marker": "laptop"
+      }
+    ],
+    [
+      "pointed",
+      "p008"
+    ]
+  ]
+}

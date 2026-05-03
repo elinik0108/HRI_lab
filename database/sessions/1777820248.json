@@ -1,0 +1,43 @@
+{
+  "timestamp": 1777820248.640107,
+  "product_type": "laptop",
+  "screen": null,
+  "selected": "p001",
+  "events": [
+    [
+      "stt_product",
+      "being"
+    ],
+    [
+      "stt_product",
+      "gaming laptop"
+    ],
+    [
+      "stt_screen",
+      "the"
+    ],
+    [
+      "tablet_pick",
+      {
+        "action": "shoe_choice",
+        "value": "p001",
+        "index": 0
+      }
+    ],
+    [
+      "shown_location",
+      "p001"
+    ],
+    [
+      "vision_miss",
+      {
+        "id": "p001",
+        "marker": "laptop"
+      }
+    ],
+    [
+      "pointed",
+      "p001"
+    ]
+  ]
+}

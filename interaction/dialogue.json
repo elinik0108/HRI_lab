@@ -1,13 +1,13 @@
 {
   "greet": [
-    "Hi! I'm Kiwi. I can help you find the right shoes today.",
-    "Hello! I'm Kiwi — let me help you find some shoes.",
-    "Welcome! I'm Kiwi, your shoe assistant for today."
+    "Hi! I'm Kiwi. I can help you find the right laptop today.",
+    "Hello! I'm Kiwi — let me help you find a laptop.",
+    "Welcome! I'm Kiwi, your laptop assistant for today."
   ],
 
-  "ask_product": "What kind of shoe are you looking for? For example: {types}.",
+  "ask_product": "What kind of laptop are you looking for? For example: {types}.",
 
-  "product_confirmed": "Got it — {shoe_type}.",
+  "product_confirmed": "Got it — a {product_type}.",
 
   "stt_retry": [
     "Sorry, I didn't catch that. Could you say it again?",
@@ -16,38 +16,30 @@
 
   "stt_failed_fallback": "No worries. Let me show you what we have on the tablet.",
 
-  "ask_color": [
-    "What color would you like?",
-    "Do you have any color in mind?"                
-    ],
+  "ask_screen": "What screen size do you want? Thirteen, fifteen, or seventeen inches?",
 
-  "ask_size": [
-    "And what size?",
-    "And what size do you want?"
-  ],
-
-  "size_unavailable": "Sorry, we don't have size {asked} in that style. We have it in sizes {available}. What size would you like instead?",
+  "screen_unavailable": "Sorry, we don't have {asked} inch screens for that style. We have {available} inch options. What size would you like instead?",
 
   "no_match": "I couldn't find an exact match. Let me show you what's close.",
 
   "multiple_matches": "I found {count} options. Please pick one on the tablet.",
 
   "show_location_intro": [
-    "Let me show you where the {color} {type} is.",
-    "Let me show you the {color} {type}."
+    "Let me show you where the {product_type} is.",
+    "Let me show you the {product_type}."
   ],
-  
+
   "show_location_pointing": [
-    "The {color} {type} is over there.",
+    "The {product_type} is over there.",
     "Right over there.",
     "It's that way."
   ],
-  
+
   "show_location_detail": "You can find it on {location}.",
 
   "farewell": [
     "I hope I helped! Come back anytime.",
-    "Glad to help",
-    "Enjoy your new shoes!"
+    "Have a great day!",
+    "Enjoy your new laptop!"
   ]
 }

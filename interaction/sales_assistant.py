@@ -5,32 +5,29 @@ from typing import Optional, List
 from urllib.parse import quote
 from pathlib import Path
 
-from .parsers import parse_shoe_type, parse_color, parse_size
 from .dialogue import Dialogue
 from HRI_lab_Pepper.vision.marker_finder import find_marker_bearing
+from .parsers import parse_product_type, parse_screen_size
 
 ## changes to lower case when called
 class State(Enum):
     GREET = auto()
     ASK_PRODUCT = auto()
-    LISTEN_PRODUCT  = auto()
-    ASK_COLOR = auto()
-    ASK_SIZE = auto()
+    LISTEN_PRODUCT = auto()
+    ASK_SCREEN = auto()
     NARROW_DOWN = auto()
     INPUT_REGISTER_FAILURE = auto()
     SHOW_LOCATION = auto()
-    POINT_AT_SHOE = auto()
+    POINT_AT_PRODUCT = auto()
     DONE = auto()
-
 
 @dataclass
 class SessionContext:
-    shoe_type: Optional[str] = None
-    color: Optional[str] = None
-    size: Optional[int] = None
+    product_type: Optional[str] = None
+    screen: Optional[int] = None
     selected: Optional[object] = None
     events: List[tuple] = field(default_factory=list)
-    size_retries: int = 0
+    screen_retries: int = 0
 
 class SalesAssistant:
     '''
@@ -68,19 +65,14 @@ class SalesAssistant:
         self.keep_the_current_session()
 
     def keep_the_current_session(self):
-        '''
-        Takes care of session handling, creates a session in database/sessions
-        '''
-
         sessions_dir = Path("database/sessions")
         sessions_dir.mkdir(parents=True, exist_ok=True)
         record = {
             "timestamp": time.time(),
-            "shoe_type": self.ctx.shoe_type,
-            "color": self.ctx.color,
-            "size": self.ctx.size,
-            "selected": self.ctx.selected.id if self.ctx.selected else None,
-            "events": self.ctx.events,
+            "product_type": self.ctx.product_type,
+            "screen":       self.ctx.screen,
+            "selected":     self.ctx.selected.id if self.ctx.selected else None,
+            "events":       self.ctx.events,
         }
         path = sessions_dir / f"{int(record['timestamp'])}.json"
         path.write_text(json.dumps(record, indent=2, default=str))
@@ -109,164 +101,130 @@ class SalesAssistant:
         return State.LISTEN_PRODUCT
 
     def _on_listen_product(self):
-        for atmpt in range(self.MAX_STT_RETRIES + 1):
+        for attempt in range(self.MAX_STT_RETRIES + 1):
             transcript = self._listen()
             self._log_event("stt_product", transcript)
-            shoe_type = parse_shoe_type(transcript)
-            if shoe_type:
-                self.ctx.shoe_type = shoe_type
-                self._on_say("product_confirmed", shoe_type=shoe_type)
-                return State.ASK_COLOR
-            if atmpt < self.MAX_STT_RETRIES:
+            product_type = parse_product_type(transcript)
+            if product_type:
+                self.ctx.product_type = product_type
+                self._on_say("product_confirmed", product_type=product_type)
+                return State.ASK_SCREEN
+            if attempt < self.MAX_STT_RETRIES:
                 self._on_say("stt_retry")
         self._on_say("stt_failed_fallback")
         return State.INPUT_REGISTER_FAILURE
 
-    ## color
-    def _on_ask_color(self):
-        self._on_say("ask_color")
+    def _on_ask_screen(self):
+        self._on_say("ask_screen")
         transcript = self._listen()
-        self._log_event("stt_color", transcript)
-        self.ctx.color = parse_color(transcript)
-        return State.ASK_SIZE
-    ## size
-    def _on_ask_size(self):
-        self._on_say("ask_size")
-        transcript = self._listen()
-        self._log_event("stt_size", transcript)
-        self.ctx.size = parse_size(transcript)
+        self._log_event("stt_screen", transcript)
+        self.ctx.screen = parse_screen_size(transcript)
         return State.NARROW_DOWN
 
-    ## search for the cutstomer input
+
     def _on_narrow_down(self):
         candidates = self.catalog.filter(
-            shoe_type=self.ctx.shoe_type,
-            color=self.ctx.color,
-            size=self.ctx.size,
+            product_type=self.ctx.product_type,
+            screen=self.ctx.screen,
         )
         if len(candidates) == 1:
             self.ctx.selected = candidates[0]
             return State.SHOW_LOCATION
         if len(candidates) == 0:
-            without_size = self.catalog.filter(
-                shoe_type=self.ctx.shoe_type,
-                color=self.ctx.color,
-            )
-            if without_size and self.ctx.size is not None and self.ctx.size_retries < 1:
-                self.ctx.size_retries += 1
-                available = sorted({sz for s in without_size for sz in s.sizes})
-                self._on_say("size_unavailable",
-                        asked=self.ctx.size,
-                        available=", ".join(str(sz) for sz in available))
-                self._log_event("size_unavailable",
-                                {"asked": self.ctx.size, "available": available})
-                self.ctx.size = None
-                return State.ASK_SIZE
+            without_screen = self.catalog.filter(product_type=self.ctx.product_type)
+            if without_screen and self.ctx.screen is not None and self.ctx.screen_retries < 1:
+                self.ctx.screen_retries += 1
+                available = sorted({p.screen for p in without_screen})
+                self._on_say("screen_unavailable",
+                            asked=self.ctx.screen,
+                            available=", ".join(str(s) for s in available))
+                self._log_event("screen_unavailable",
+                                {"asked": self.ctx.screen, "available": available})
+                self.ctx.screen = None
+                return State.ASK_SCREEN
             self._on_say("no_match")
         else:
             self._on_say("multiple_matches", count=len(candidates))
         return State.INPUT_REGISTER_FAILURE
 
-        # if len(candidates) == 0:
-        #     self.tts.speak("I couldn't find an exact match. Let me show you what's close.")
-        # else:
-        #     self.tts.speak(f"I found {len(candidates)} options. Please pick one on the tablet.")
-        # return State.INPUT_REGISTER_FAILURE
-
-
 
     def _on_input_register_failure(self):
-
         candidates = self.catalog.filter(
-            shoe_type=self.ctx.shoe_type,
-            color=self.ctx.color,
-            size=self.ctx.size,
+            product_type=self.ctx.product_type,
+            screen=self.ctx.screen,
         )
         if not candidates:
-            candidates = self.catalog.filter(shoe_type=self.ctx.shoe_type, color=self.ctx.color,)
-
-        if not candidates:
-            candidates = self.catalog.filter(shoe_type=self.ctx.shoe_type)
-
+            candidates = self.catalog.filter(product_type=self.ctx.product_type)
         if not candidates:
             candidates = self.catalog.all()
 
-        # Build the picker URL
         items = [
-            {"id": s.id, "type": s.type, "color": s.color,
-            "price": s.price, "sizes": s.sizes}
-            for s in candidates
+            {"id": p.id, "type": p.type, "screen": p.screen, "price": p.price}
+            for p in candidates
         ]
         params = (
-            f"title=Pick+your+shoe"
+            f"title=Pick+your+laptop"
             f"&subtitle=Tap+a+card"
             f"&items={quote(json.dumps(items))}"
         )
-        url = self.url_builder("shoe_picker.html", params)
+        url = self.url_builder("product_picker.html", params)
         self.tablet.show_webview(url)
 
-        # Wait for the tap
         choice = self.wait_for_tablet(timeout=60.0) if self.wait_for_tablet else {}
         self._log_event("tablet_pick", choice)
 
-        shoe_id = choice.get("value") if choice else None
-        self.ctx.selected = self.catalog.by_id(shoe_id) if shoe_id else None
-        print(f"[DEBUG _on_input_register_failure] shoe_id={shoe_id!r} selected={self.ctx.selected!r}")
+        product_id = choice.get("value") if choice else None
+        self.ctx.selected = self.catalog.by_id(product_id) if product_id else None
         return State.SHOW_LOCATION if self.ctx.selected else State.DONE
 
+
     def _on_show_location(self):
-        s = self.ctx.selected
-        self._on_say("show_location_intro", color=s.color, type=s.type)
-        self._log_event("shown_location", s.id)
-        return State.POINT_AT_SHOE
+        p = self.ctx.selected
+        self._on_say("show_location_intro", product_type=p.type)
+        self._log_event("shown_location", p.id)
+        return State.POINT_AT_PRODUCT
 
 
-    def _on_point_at_shoe(self):
-        s = self.ctx.selected
-        if not (self.pointer and self.camera and self.detector and s.marker_label):
-            ##fallback if it goes wrong
-            self._on_say("show_location_detail", location=s.location)
+    def _on_point_at_product(self):
+        p = self.ctx.selected
+        if not (self.pointer and self.camera and self.detector and p.marker_label):
+            self._on_say("show_location_detail", location=p.location)
             self._log_event("point_skipped", "no_pointer_camera_detector_or_marker")
             return State.DONE
 
-        self.pointer.turn_body(s.table_angle_deg)
+        self.pointer.turn_body(p.table_angle_deg)
         time.sleep(0.4)
 
         refined_bearing = None
         for _ in range(3):
             frame = self.camera.get_frame()
-            result = find_marker_bearing(frame, self.detector, s.marker_label)
+            result = find_marker_bearing(frame, self.detector, p.marker_label)
             if result is not None:
                 refined_bearing, conf = result
                 self._log_event("vision_hit", {
-                    "bearing": refined_bearing, "conf": conf, "marker": s.marker_label,
+                    "bearing": refined_bearing, "conf": conf, "marker": p.marker_label,
                 })
                 break
             time.sleep(0.3)
 
         if refined_bearing is not None:
-            print(f"[POINTING] marker={s.marker_label!r} bearing={refined_bearing:.1f} deg conf={conf:.2f}")
             self.pointer.turn_body(refined_bearing)
             time.sleep(0.3)
         else:
-            print(f"[POINTING] marker={s.marker_label!r} not found. Using fixed angle only")
-            self._log_event("vision_miss", {"id": s.id, "marker": s.marker_label})
+            self._log_event("vision_miss", {"id": p.id, "marker": p.marker_label})
 
-
+        import threading
         arm_thread = threading.Thread(
             target=self.pointer.raise_right_arm,
             kwargs={"hold_seconds": 3.5},
             daemon=True,
         )
         arm_thread.start()
-
         time.sleep(0.3)
-        self._on_say("show_location_pointing", color=s.color, type=s.type)
-
-        self._on_say("show_location_detail", location=s.location)
-
-        # Wait for the arm to come down
+        self._on_say("show_location_pointing", product_type=p.type)
+        self._on_say("show_location_detail", location=p.location)
         arm_thread.join(timeout=8.0)
 
-        self._log_event("pointed", s.id)
+        self._log_event("pointed", p.id)
         return State.DONE
+

@@ -14,7 +14,7 @@
   const grid = document.getElementById("card-grid");
 
   function imageFor(item) {
-    return item.image ? item.image : `img/shoes/${item.id}.jpg`;
+    return item.image ? item.image : `img/products/${item.id}.jpg`;
   }
 
   items.forEach((item, idx) => {
@@ -26,11 +26,11 @@
 
     const sizes = (item.sizes || []).join(", ");
     card.innerHTML = `
-      <img class="shoe-card-image" src="${imageFor(item)}" alt="${item.color} ${item.type}"
-           onerror="this.style.opacity=0.3; this.alt='No image';">
+      <img class="shoe-card-image" src="${imageFor(item)}" alt="${item.type} ${item.screen}-inch"
+          onerror="this.style.opacity=0.3; this.alt='No image';">
       <div class="shoe-card-body">
-        <div class="shoe-title">${item.color} ${item.type}</div>
-        <div class="shoe-meta">Sizes: ${sizes}</div>
+        <div class="shoe-title">${capitalize(item.type)}</div>
+        <div class="shoe-meta">${item.screen}" screen</div>
         <div class="shoe-price">€${item.price}</div>
       </div>
     `;
@@ -51,6 +51,7 @@
   // ──────────────────────────────────────────────────────────
   const gridView   = document.getElementById("grid-view");
   const detailView = document.getElementById("detail-view");
+  
   const detailImg  = document.getElementById("detail-image");
   const detailTitle = document.getElementById("detail-title");
   const detailMeta  = document.getElementById("detail-meta");
@@ -72,8 +73,8 @@
       detailImg.alt = "No image available";
     };
 
-    detailTitle.textContent = `${capitalize(item.color)} ${item.type}`;
-    detailMeta.textContent  = `Available sizes: ${(item.sizes || []).join(", ")}`;
+    detailTitle.textContent = `${capitalize(item.type)}`;
+    detailMeta.textContent  = `${item.screen}-inch screen`;
     detailPrice.textContent = `€${item.price}`;
 
     gridView.classList.add("hidden");
