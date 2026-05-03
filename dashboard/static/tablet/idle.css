@@ -1,0 +1,81 @@
+.idle-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    width: 100%;
+    text-align: center;
+    padding: 2rem;
+    box-sizing: border-box;
+  }
+  
+  /* ─── Emblem with breathing animation ─────────────────────── */
+  
+  .idle-emblem {
+    position: relative;
+    width: 12rem;
+    height: 12rem;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .idle-emblem-core {
+    position: relative;
+    z-index: 2;
+    font-size: 6rem;
+    line-height: 1;
+  }
+  
+  .idle-emblem-pulse {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    border-radius: 50%;
+    background: var(--accent);
+    opacity: 0.3;
+    animation: idle-breathe 3s ease-in-out infinite;
+  }
+  
+  @keyframes idle-breathe {
+    0%, 100% {
+      transform: scale(0.85);
+      opacity: 0.25;
+    }
+    50% {
+      transform: scale(1.05);
+      opacity: 0.45;
+    }
+  }
+  
+  /* ─── Text ────────────────────────────────────────────────── */
+  
+  .idle-name {
+    font-size: 4rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem;
+    letter-spacing: 0.05em;
+    color: var(--text);
+  }
+  
+  .idle-tagline {
+    font-size: 1.5rem;
+    margin: 0 0 3rem;
+    opacity: 0.85;
+    color: var(--text);
+  }
+  
+  .idle-instruction {
+    font-size: 1.1rem;
+    opacity: 0.6;
+    margin: 0;
+    letter-spacing: 0.02em;
+    color: var(--text);
+    animation: idle-fade 2.5s ease-in-out infinite;
+  }
+  
+  @keyframes idle-fade {
+    0%, 100% { opacity: 0.4; }
+    50%      { opacity: 0.9; }
+  }

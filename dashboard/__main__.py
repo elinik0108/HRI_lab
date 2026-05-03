@@ -269,11 +269,19 @@ def run_scenario(tts, stt, camera, detector, tablet, anim, posture, leds, awaren
     tts.set_volume(40)
     tts.set_speed(90)
 
+    # how the idle screen on the tablet
+    def _show_idle():
+        url = _build_tablet_url(dashboard_url, "idle.html", "", on_robot)
+        tablet.show_webview(url)
+
+    _show_idle()
+
     while True:
         if not _wait_for_person(camera, detector, timeout=120.0):
             _log("Nobody showed up. Ending demo.")
             return
 
+        #tablet.hide()
         _led(leds, "happy")
 
         catalog = ShoeCatalog.load("database/shoes.json")
@@ -294,6 +302,7 @@ def run_scenario(tts, stt, camera, detector, tablet, anim, posture, leds, awaren
         tablet.hide()
         _led(leds, "off")
         _wait_for_no_person(camera, detector, timeout=30.0)
+        _show_idle()
         _log("Ready for the next customer.")
 # ──────────────────────────────────────────────────────────────────────────────
 #  Entry point

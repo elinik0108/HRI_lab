@@ -1,0 +1,52 @@
+{
+  "timestamp": 1777817875.8880343,
+  "shoe_type": "sandal",
+  "color": null,
+  "size": null,
+  "selected": "s006",
+  "events": [
+    [
+      "stt_product",
+      "sneak up"
+    ],
+    [
+      "stt_product",
+      "you are fucking dumb"
+    ],
+    [
+      "stt_product",
+      "sandal"
+    ],
+    [
+      "stt_color",
+      "read"
+    ],
+    [
+      "stt_size",
+      "the five"
+    ],
+    [
+      "tablet_pick",
+      {
+        "action": "shoe_choice",
+        "value": "s006",
+        "index": 0
+      }
+    ],
+    [
+      "shown_location",
+      "s006"
+    ],
+    [
+      "vision_miss",
+      {
+        "id": "s006",
+        "marker": "banana"
+      }
+    ],
+    [
+      "pointed",
+      "s006"
+    ]
+  ]
+}
